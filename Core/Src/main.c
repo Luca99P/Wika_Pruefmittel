@@ -21,7 +21,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "demo.h"
 #include "utils.h"
 #include "spi.h"
 #include "usart.h"
@@ -105,9 +104,9 @@ static void diesdasNotif( rfalNfcState st )
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  static rfalNfcDiscoverParam discParam;
-  static uint8_t              state = 0;
-  static rfalNfcDevice *nfcDevice;
+  static rfalNfcDiscoverParam 	discParam;
+  static uint8_t              	state = 0;
+  static rfalNfcDevice 			*nfcDevice;
 
   /* USER CODE END 1 */
 
@@ -193,62 +192,25 @@ int main(void)
 
   ReturnCode err;
 
-      err = rfalNfcInitialize();
-      if( err == ERR_NONE )
-      {
-          discParam.compMode      = RFAL_COMPLIANCE_MODE_NFC;
-          discParam.devLimit      = 1U;
-          discParam.nfcfBR        = RFAL_BR_212;
-          discParam.ap2pBR        = RFAL_BR_424;
+  err = rfalNfcInitialize();
+  if( err == ERR_NONE )
+  {
+	  discParam.compMode      = RFAL_COMPLIANCE_MODE_NFC;
+	  discParam.devLimit      = 1U;
+	  discParam.nfcfBR        = RFAL_BR_212;
+	  discParam.ap2pBR        = RFAL_BR_424;
 
-          ST_MEMCPY( &discParam.nfcid3, NFCID3, sizeof(NFCID3) );
-          ST_MEMCPY( &discParam.GB, GB, sizeof(GB) );
-          discParam.GBLen         = sizeof(GB);
+	  ST_MEMCPY( &discParam.nfcid3, NFCID3, sizeof(NFCID3) );
+	  ST_MEMCPY( &discParam.GB, GB, sizeof(GB) );
+	  discParam.GBLen         = sizeof(GB);
 
-          discParam.notifyCb             = diesdasNotif;
-          discParam.totalDuration        = 1000U;
-          discParam.wakeupEnabled        = false;
-          discParam.wakeupConfigDefault  = true;
-          discParam.techs2Find           = ( RFAL_NFC_POLL_TECH_A | RFAL_NFC_POLL_TECH_B | RFAL_NFC_POLL_TECH_F | RFAL_NFC_POLL_TECH_V | RFAL_NFC_POLL_TECH_ST25TB );
-
-  #if defined(ST25R3911) || defined(ST25R3916)
-          discParam.techs2Find   |= RFAL_NFC_POLL_TECH_AP2P;
-  #endif /* ST25R95 */
-
-
-  #if defined(ST25R3916)
-
-        /* Set configuration for NFC-A CE */
-        ST_MEMCPY( discParam.lmConfigPA.SENS_RES, ceNFCA_SENS_RES, RFAL_LM_SENS_RES_LEN );                        /* Set SENS_RES / ATQA */
-        ST_MEMCPY( discParam.lmConfigPA.nfcid, ceNFCA_NFCID, RFAL_NFCID2_LEN );                                   /* Set NFCID / UID */
-        discParam.lmConfigPA.nfcidLen = RFAL_LM_NFCID_LEN_07;                                                     /* Set NFCID length to 7 bytes */
-        discParam.lmConfigPA.SEL_RES  = ceNFCA_SEL_RES;                                                           /* Set SEL_RES / SAK */
-
-        /* Set configuration for NFC-F CE */
-        ST_MEMCPY( discParam.lmConfigPF.SC, ceNFCF_SC, RFAL_LM_SENSF_SC_LEN );                                    /* Set System Code */
-        ST_MEMCPY( &ceNFCF_SENSF_RES[RFAL_NFCF_LENGTH_LEN], ceNFCF_nfcid2, RFAL_LM_SENSF_RES_LEN );               /* Load NFCID2 on SENSF_RES */
-        ST_MEMCPY( discParam.lmConfigPF.SENSF_RES, ceNFCF_SENSF_RES, RFAL_LM_SENSF_RES_LEN );                     /* Set SENSF_RES / Poll Response */
-
-        discParam.techs2Find |= ( RFAL_NFC_LISTEN_TECH_A | RFAL_NFC_LISTEN_TECH_F );
-
-  #endif /* ST25R95 */
-        state = 0;
-      }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	  discParam.notifyCb             = diesdasNotif;
+	  discParam.totalDuration        = 1000U;
+	  discParam.wakeupEnabled        = false;
+	  discParam.wakeupConfigDefault  = true;
+	  discParam.techs2Find           = ( RFAL_NFC_POLL_TECH_A | RFAL_NFC_POLL_TECH_B | RFAL_NFC_POLL_TECH_F | RFAL_NFC_POLL_TECH_V | RFAL_NFC_POLL_TECH_ST25TB | RFAL_NFC_POLL_TECH_AP2P );
+	  state = 0;
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -299,8 +261,6 @@ int main(void)
 		}
 
 	}
-	/* Run Demo Application */
-	//demoCycle();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
