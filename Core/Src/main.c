@@ -22,9 +22,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "utils.h"
-#include "spi.h"
-#include "usart.h"
+#include "platform.h"
 #include "logger.h"
+#include "st_errno.h"
+#include "rfal_rf.h"
+#include "rfal_analogConfig.h"
 #include "rfal_nfc.h"
 /* USER CODE END Includes */
 
@@ -46,23 +48,33 @@
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
+UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart2_rx;
+DMA_HandleTypeDef hdma_usart6_rx;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+#define SPI_TIMEOUT   1000
+uint8_t globalCommProtectCnt = 0;
+SPI_HandleTypeDef *pSpi = NULL;
+
 /* P2P communication data */
 static uint8_t NFCID3[] = {0x01, 0xFE, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
 static uint8_t GB[] = {0x46, 0x66, 0x6d, 0x01, 0x01, 0x11, 0x02, 0x02, 0x07, 0x80, 0x03, 0x02, 0x00, 0x03, 0x04, 0x01, 0x32, 0x07, 0x01, 0x03};
-
-
-uint8_t globalCommProtectCnt = 0;
+//uint8_t globalCommProtectCnt = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_USART6_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 
@@ -95,6 +107,133 @@ static void diesdasNotif( rfalNfcState st )
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+HAL_StatusTypeDef spiTxRx(const uint8_t *txData, uint8_t *rxData, uint16_t length)
+{
+    if(pSpi == NULL)
+    {
+        return HAL_ERROR;
+    }
+
+    if( (txData != NULL) && (rxData == NULL) )
+    {
+        return HAL_SPI_Transmit(pSpi, (uint8_t*)txData, length, SPI_TIMEOUT);
+    }
+    else if( (txData == NULL) && (rxData != NULL) )
+    {
+        return HAL_SPI_Receive(pSpi, rxData, length, SPI_TIMEOUT);
+    }
+
+    return HAL_SPI_TransmitReceive(pSpi, (uint8_t*)txData, rxData, length, SPI_TIMEOUT);
+}
+
+void spiInit(SPI_HandleTypeDef *hspi)
+{
+    pSpi = hspi;
+
+    /* enabling SPI block will put SCLK to output, guaranteeing proper state when spiSelect() gets called */
+    __HAL_SPI_ENABLE(hspi);
+}
+
+uint16_t rfalInit(rfalNfcDiscoverParam *pDiscParam){
+
+	ReturnCode err;
+	err = rfalNfcInitialize();
+	if( err == ERR_NONE )
+	{
+		  pDiscParam->compMode      = RFAL_COMPLIANCE_MODE_NFC;
+		  pDiscParam->devLimit      = 1U;
+		  pDiscParam->nfcfBR        = RFAL_BR_212;
+		  pDiscParam->ap2pBR        = RFAL_BR_424;
+
+		  ST_MEMCPY( &pDiscParam->nfcid3, NFCID3, sizeof(NFCID3) );
+		  ST_MEMCPY( &pDiscParam->GB, GB, sizeof(GB) );
+		  pDiscParam->GBLen         = sizeof(GB);
+
+		  pDiscParam->notifyCb             = diesdasNotif;
+		  pDiscParam->totalDuration        = 1000U;
+		  pDiscParam->wakeupEnabled        = false;
+		  pDiscParam->wakeupConfigDefault  = true;
+		  pDiscParam->techs2Find           = ( RFAL_NFC_POLL_TECH_A | RFAL_NFC_POLL_TECH_B | RFAL_NFC_POLL_TECH_F | RFAL_NFC_POLL_TECH_V | RFAL_NFC_POLL_TECH_ST25TB | RFAL_NFC_POLL_TECH_AP2P );
+	}
+	return err;
+}
+
+uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, uint8_t discoveryStarted){
+	uint8_t devUID[RFAL_NFCV_UID_LEN];
+
+	if(HAL_GPIO_ReadPin(START_RFID_GPIO_Port, START_RFID_Pin)){
+		rfalNfcWorker();                                    // Run RFAL worker periodically
+
+		if(!discoveryStarted){
+			rfalNfcDeactivate( false );
+			rfalNfcDiscover( pDiscParam );
+
+			discoveryStarted = 1;
+		}else{
+			if( rfalNfcIsDevActivated( rfalNfcGetState() ) )
+			{
+				rfalNfcGetActiveDevice( &pNfcDevice );
+				if(pNfcDevice->type == RFAL_NFC_LISTEN_TYPE_NFCV){
+					HAL_GPIO_WritePin(CHECK_RFID_GPIO_Port, CHECK_RFID_Pin, GPIO_PIN_SET);
+	                ST_MEMCPY( devUID, pNfcDevice->nfcid, pNfcDevice->nfcidLen );   /* Copy the UID into local var */
+	                REVERSE_BYTES( devUID, RFAL_NFCV_UID_LEN );                 /* Reverse the UID for display purposes */
+	                platformLog("ISO15693/NFC-V card found. UID: %s\r\n", hex2Str(devUID, RFAL_NFCV_UID_LEN));
+				}
+				rfalNfcDeactivate( false );
+				discoveryStarted = 0;
+			}
+		}
+	}else{
+		HAL_GPIO_WritePin(CHECK_RFID_GPIO_Port, CHECK_RFID_Pin, GPIO_PIN_RESET);
+		discoveryStarted = 0;
+	}
+
+	return discoveryStarted;
+}
+
+void checkRS485(){
+	if(HAL_GPIO_ReadPin(START_RS485_GPIO_Port, START_RS485_Pin)){
+		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_SET);
+		HAL_UART_Transmit(&huart6, (uint8_t*)"RS485_TEST_123", 14, 10);
+		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_RESET);
+
+		// if(HAL_UART_Receive(&huart2, Uart_buff, 1, 10) == HAL_OK)
+		// {
+
+	}else{
+		HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_RESET);
+	}
+}
+
+void usartRelay(){
+	 uint8_t Uart_buff[50] = {'\0'};
+	 uint8_t buff_Len = 0;
+	 HAL_UART_Receive(&huart2, Uart_buff, 50, 10);
+	 //if(HAL_UART_Receive(&huart2, Uart_buff, 50, 10) == HAL_OK)
+	 //for(i = 0; Uart_buff[i] != '\0'  && i < 50; i++)
+	 //{
+	 buff_Len = strlen((char *)Uart_buff);
+	 if(buff_Len){
+		 HAL_UART_Transmit(&huart1, Uart_buff, buff_Len, 10);
+	 }
+	 //}
+	 Uart_buff[0] = '\0';
+
+	 HAL_UART_Receive(&huart1, Uart_buff, 50, 10);
+	 //for(i = 0; Uart_buff[i] != '\0'  && i < 50; i++)
+	 //{
+
+	 buff_Len = strlen((char *)Uart_buff);
+	 if(buff_Len){
+		 HAL_UART_Transmit(&huart2, Uart_buff, strlen((char *)Uart_buff), 10);
+	 }
+	 //}
+	 /*if(HAL_UART_Receive(&huart1, Uart_buff, 1, 10) == HAL_OK)
+	 {
+		 HAL_UART_Transmit(&huart2, Uart_buff, 1, 10);
+	 }*/
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -104,9 +243,9 @@ static void diesdasNotif( rfalNfcState st )
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  static rfalNfcDiscoverParam 	discParam;
-  static uint8_t              	state = 0;
-  static rfalNfcDevice 			*nfcDevice;
+  rfalNfcDiscoverParam 	discParam;
+  uint8_t              	state = 0;
+  rfalNfcDevice 		*pNfcDevice = NULL;
 
   /* USER CODE END 1 */
 
@@ -128,8 +267,11 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
   MX_SPI1_Init();
+  MX_USART1_UART_Init();
+  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* Initialize driver*/
@@ -138,129 +280,18 @@ int main(void)
   /* Initialize log module */
   logUsartInit(&huart2);
 
-  //platformLog("Welcome to X-NUCLEO-NFC05A1\r\n");
-
-  /* Initalize RFAL */
-  //if(false/* !demoIni()*/ )
-  //{
-    /*
-    * in case the rfal initalization failed signal it by flashing all LED
-    * and stoping all operations
-    *//*
-    platformLog("Initialization failed..\r\n");
-    while(1)
-    {
-      platformLedToogle(PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN);
-      platformLedToogle(PLATFORM_LED_A_PORT, PLATFORM_LED_A_PIN);
-      platformLedToogle(PLATFORM_LED_B_PORT, PLATFORM_LED_B_PIN);
-      platformLedToogle(PLATFORM_LED_F_PORT, PLATFORM_LED_F_PIN);
-      platformLedToogle(PLATFORM_LED_V_PORT, PLATFORM_LED_V_PIN);
-      platformLedToogle(PLATFORM_LED_AP2P_PORT, PLATFORM_LED_AP2P_PIN);
-      platformDelay(100);
-    }
-  }
-  else
-  {
-    platformLog("Initialization succeeded..\r\n");
-    for (int i = 0; i < 6; i++)
-    {
-      platformLedToogle(PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN);
-      platformLedToogle(PLATFORM_LED_A_PORT, PLATFORM_LED_A_PIN);
-      platformLedToogle(PLATFORM_LED_B_PORT, PLATFORM_LED_B_PIN);
-      platformLedToogle(PLATFORM_LED_F_PORT, PLATFORM_LED_F_PIN);
-      platformLedToogle(PLATFORM_LED_V_PORT, PLATFORM_LED_V_PIN);
-      platformLedToogle(PLATFORM_LED_AP2P_PORT, PLATFORM_LED_AP2P_PIN);
-      platformDelay(200);
-    }
-
-    platformLedOff(PLATFORM_LED_A_PORT, PLATFORM_LED_A_PIN);
-    platformLedOff(PLATFORM_LED_B_PORT, PLATFORM_LED_B_PIN);
-    platformLedOff(PLATFORM_LED_F_PORT, PLATFORM_LED_F_PIN);
-    platformLedOff(PLATFORM_LED_V_PORT, PLATFORM_LED_V_PIN);
-    platformLedOff(PLATFORM_LED_AP2P_PORT, PLATFORM_LED_AP2P_PIN);
-    platformLedOff(PLATFORM_LED_FIELD_PORT, PLATFORM_LED_FIELD_PIN);
-  }*/
-
-
-
-
-
-
-
-
-
-
-  ReturnCode err;
-
-  err = rfalNfcInitialize();
-  if( err == ERR_NONE )
-  {
-	  discParam.compMode      = RFAL_COMPLIANCE_MODE_NFC;
-	  discParam.devLimit      = 1U;
-	  discParam.nfcfBR        = RFAL_BR_212;
-	  discParam.ap2pBR        = RFAL_BR_424;
-
-	  ST_MEMCPY( &discParam.nfcid3, NFCID3, sizeof(NFCID3) );
-	  ST_MEMCPY( &discParam.GB, GB, sizeof(GB) );
-	  discParam.GBLen         = sizeof(GB);
-
-	  discParam.notifyCb             = diesdasNotif;
-	  discParam.totalDuration        = 1000U;
-	  discParam.wakeupEnabled        = false;
-	  discParam.wakeupConfigDefault  = true;
-	  discParam.techs2Find           = ( RFAL_NFC_POLL_TECH_A | RFAL_NFC_POLL_TECH_B | RFAL_NFC_POLL_TECH_F | RFAL_NFC_POLL_TECH_V | RFAL_NFC_POLL_TECH_ST25TB | RFAL_NFC_POLL_TECH_AP2P );
-	  state = 0;
-  }
+  rfalInit(&discParam);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	rfalNfcWorker();                                    // Run RFAL worker periodically
+	  state = checkNFC(&discParam, pNfcDevice, state);
 
+	  checkRS485();
 
-
-	if(!state){
-		rfalNfcDeactivate( false );
-		rfalNfcDiscover( &discParam );
-
-		state = 1;
-	}else{
-		if( rfalNfcIsDevActivated( rfalNfcGetState() ) )
-		{
-			rfalNfcGetActiveDevice( &nfcDevice );
-			if(nfcDevice->type == RFAL_NFC_LISTEN_TYPE_NFCA){
-				platformLedOn(PLATFORM_LED_A_PORT, PLATFORM_LED_A_PIN);
-				switch( nfcDevice->dev.nfca.type )
-				{
-					case RFAL_NFCA_T1T:
-						platformLog("ISO14443A/Topaz (NFC-A T1T) TAG found. UID: %s\r\n", hex2Str( nfcDevice->nfcid, nfcDevice->nfcidLen ) );
-						break;
-
-					case RFAL_NFCA_T4T:
-						platformLog("NFCA Passive ISO-DEP device found. UID: %s\r\n", hex2Str( nfcDevice->nfcid, nfcDevice->nfcidLen ) );
-
-						//demoAPDU();
-						break;
-
-					case RFAL_NFCA_T4T_NFCDEP:
-					case RFAL_NFCA_NFCDEP:
-						platformLog("NFCA Passive P2P device found. NFCID: %s\r\n", hex2Str( nfcDevice->nfcid, nfcDevice->nfcidLen ) );
-
-						//demoP2P();
-						break;
-
-					default:
-						platformLog("ISO14443A/NFC-A card found. UID: %s\r\n", hex2Str( nfcDevice->nfcid, nfcDevice->nfcidLen ) );
-						break;
-				}
-			}
-			rfalNfcDeactivate( false );
-			state = 0;
-		}
-
-	}
+	  usartRelay();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -353,6 +384,39 @@ static void MX_SPI1_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -386,6 +450,62 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * @brief USART6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART6_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+
+  /* USER CODE END USART6_Init 1 */
+  huart6.Instance = USART6;
+  huart6.Init.BaudRate = 115200;
+  huart6.Init.WordLength = UART_WORDLENGTH_8B;
+  huart6.Init.StopBits = UART_STOPBITS_1;
+  huart6.Init.Parity = UART_PARITY_NONE;
+  huart6.Init.Mode = UART_MODE_TX_RX;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart6.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
+/**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Stream5_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
+  /* DMA2_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -406,7 +526,10 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, LED_F_Pin|LED_B_Pin|LED_FIELD_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_A_Pin|LED_V_Pin|LED_AP2P_Pin|SPI1_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RS485_EN_TX_Pin|CHECK_RS485_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, LED_A_Pin|CHECK_RFID_Pin|SPI1_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -427,12 +550,31 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LED_A_Pin LED_V_Pin LED_AP2P_Pin SPI1_CS_Pin */
-  GPIO_InitStruct.Pin = LED_A_Pin|LED_V_Pin|LED_AP2P_Pin|SPI1_CS_Pin;
+  /*Configure GPIO pins : RS485_EN_TX_Pin CHECK_RS485_Pin */
+  GPIO_InitStruct.Pin = RS485_EN_TX_Pin|CHECK_RS485_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : LED_A_Pin CHECK_RFID_Pin SPI1_CS_Pin */
+  GPIO_InitStruct.Pin = LED_A_Pin|CHECK_RFID_Pin|SPI1_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : START_RFID_Pin */
+  GPIO_InitStruct.Pin = START_RFID_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(START_RFID_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : START_RS485_Pin */
+  GPIO_InitStruct.Pin = START_RS485_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(START_RS485_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);

@@ -1,53 +1,21 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_st25xv.h
+  * @author  MMY Application Team
+  * @brief   NFC-V ST25 NFC-V Tag specific features
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_st25xv.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief NFC-V ST25 NFC-V Tag specific features
- *
- *  This module provides support for ST's specific features available on
- *  NFC-V (ISO15693) tag families: ST25D, ST25TV, M24LR
- *
- *
- * \addtogroup RFAL
- * @{
- *
- * \addtogroup RFAL-AL
- * \brief RFAL Abstraction Layer
- * @{
- *
- * \addtogroup ST25xV
- * \brief RFAL ST25xV Module
- * @{
- * 
- */
+  ******************************************************************************
+  */
 
 #ifndef RFAL_ST25xV_H
 #define RFAL_ST25xV_H
@@ -500,6 +468,32 @@ ReturnCode rfalST25xVPollerFastWriteDynamicConfiguration( uint8_t flags, const u
  *****************************************************************************
  */
 ReturnCode rfalST25xVPollerPresentPassword( uint8_t flags, const uint8_t* uid, uint8_t pwdNum, const uint8_t* pwd, uint8_t pwdLen );
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-V Poller Write Password
+ *  
+ * Sends the Write Password command
+ *
+ * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
+ *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
+ * \param[in]  uid            : UID of the device to be put to be read
+ *                               if not provided Select mode will be used 
+ * \param[in]  pwdNum         : Password number
+ * \param[in]  pwd            : Password
+ * \param[in]  pwdLen         : Password length
+ *  
+ * \return ERR_WRONG_STATE    : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM          : Invalid parameters
+ * \return ERR_IO             : Generic internal error 
+ * \return ERR_CRC            : CRC error detected
+ * \return ERR_FRAMING        : Framing error detected
+ * \return ERR_PROTO          : Protocol error detected
+ * \return ERR_TIMEOUT        : Timeout error
+ * \return ERR_NONE           : No error
+ *****************************************************************************
+ */
+ReturnCode rfalST25xVPollerWritePassword( uint8_t flags, const uint8_t* uid, uint8_t pwdNum, const uint8_t *pwd,  uint8_t pwdLen);
 
 /*! 
  *****************************************************************************

@@ -1,63 +1,64 @@
-/******************************************************************************
+/**
+ ******************************************************************************
+ * @file    logger.h
+ * @brief   Header for logger module
+ ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        http://www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-/*
- *      PROJECT:   
- *      $Revision: $
- *      LANGUAGE:  ANSI C
- */
+  ******************************************************************************
+  */
 
-/*! \file
- *
- *  \author 
- *
- *  \brief serial output log declaration file
- *
- */
-/*!
- *
- * This driver provides a printf-like way to output log messages
- * via the UART interface. It makes use of the uart driver.
- *
- * API:
- * - Write a log message to UART output: #DEBUG
- */
-
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef LOGGER_H
 #define LOGGER_H
 
-/*
-******************************************************************************
-* INCLUDES
-******************************************************************************
-*/
+#ifdef __cplusplus
+ extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
 #include "platform.h"
 
-/*
-******************************************************************************
-* DEFINES
-******************************************************************************
-*/
-#define LOGGER_ON   1
-#define LOGGER_OFF  0
+#if (USE_LOGGER == LOGGER_OFF && !defined(HAL_UART_MODULE_ENABLED))
+  #define UART_HandleTypeDef void
+#endif
+/** @addtogroup X-CUBE-NFC6_Applications
+ *  @{
+ */
 
+/** @addtogroup PollingTagDetect
+ *  @{
+ */
+
+/** @defgroup PTD_Logger
+ *  @brief Driver providing printf-like functions to output log messages.
+ * @{
+ */
+
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/** @defgroup PTD_Logger_Exported_Constants
+ *  @{
+ */
+#define LOGGER_ON   1                    /*!< Allows activating logger    */
+#define LOGGER_OFF  0                    /*!< Allows deactivating logger  */
+/**
+  * @}
+  */
+   
+/* Exported macro ------------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+/** @defgroup PTD_Logger_Exported_Functions
+ *  @{
+ */
 /*!
  *****************************************************************************
  *  \brief  Writes out a formated string via UART interface
@@ -80,6 +81,15 @@ extern int logUsart(const char* format, ...);
 
 /*!
  *****************************************************************************
+ *  \brief  Writes out a formated string via ITM interface
+ *
+ *  This function is used to write a formated string via the ITM interface.
+ *
+ *****************************************************************************
+ */
+extern int logITM(const char* format, ...);
+/*!
+ *****************************************************************************
  *  \brief  helper to convert hex data into formated string
  *
  *  \param[in] data : pointer to buffer to be dumped.
@@ -92,5 +102,25 @@ extern int logUsart(const char* format, ...);
  */
 extern char* hex2Str(unsigned char * data, size_t dataLen);
 
-#endif /* LOGGER_H */
 
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */ 
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* LOGGER_H */

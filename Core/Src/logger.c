@@ -1,57 +1,46 @@
-/******************************************************************************
+/**
+ ******************************************************************************
+ * @file    logger.c 
+ * @author  MMY Application Team
+ * @brief   Debug log output utility implementation.
+ ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        http://www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-/*
- *      PROJECT:   
- *      $Revision: $
- *      LANGUAGE:  ANSI C
- */
+  ******************************************************************************
+  */
 
-/*! \file
- *
- *  \author 
- *
- *  \brief Debug log output utility implementation.
- *
- */
-
-/*
-******************************************************************************
-* INCLUDES
-******************************************************************************
-*/
-#include "usart.h"
+/* Includes ------------------------------------------------------------------*/
 #include "logger.h"
 #include "st_errno.h"
-#include "utils.h"
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 
-/*
-******************************************************************************
-* LOCAL DEFINES
-******************************************************************************
-*/
 
-      
+/** @addtogroup X-CUBE-NFC6_Applications
+ *  @{
+ */
+
+/** @addtogroup PollingTagDetect
+ *  @{
+ */
+
+/** @addtogroup PTD_Logger 
+ * @{
+ */
+
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+/** @defgroup PTD_Logger_Private_Define
+ * @{
+ */
 #if (USE_LOGGER == LOGGER_ON)
 
 #define MAX_HEX_STR         4
@@ -60,36 +49,99 @@ char hexStr[MAX_HEX_STR][MAX_HEX_STR_LENGTH];
 uint8_t hexStrIdx = 0;
 #endif /* #if USE_LOGGER == LOGGER_ON */
 
-#define USART_TIMEOUT          1000
 
-UART_HandleTypeDef *pLogUsart = 0;
+#if (USE_LOGGER == LOGGER_OFF && !defined(HAL_UART_MODULE_ENABLED))
+  #define UART_HandleTypeDef void
+#endif
+
+/*!< Maximum Timeout values for flags waiting loops. These timeouts are not based
+   on accurate values, they just guarantee that the application will not remain
+   stuck if the UART communication is corrupted.
+   You may modify these timeout values depending on CPU frequency and application
+   conditions (interrupts routines ...). */
+#define USART_TIMEOUT          1000
+/**
+  * @}
+  */ 
+
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/** @defgroup PTD_Logger_Private_Variables
+ * @{
+ */
+UART_HandleTypeDef *pLogUsart = 0;   /*!< pointer to the logger Handler */
+/**
+  * @}
+  */ 
+
+/* Private function prototypes -----------------------------------------------*/
 uint8_t logUsartTx(uint8_t *data, uint16_t dataLen);
 
+/* Private functions ---------------------------------------------------------*/
+/** @defgroup PTD_Logger_Private_Functions
+ * @{
+ */
 /**
-  * @brief  This function initalize the UART handle.
-	* @param	husart : already initalized handle to USART HW
-  * @retval none :
+  *****************************************************************************
+  * @brief  This function initalize the UART handle and UART IP.
+  *
+  * @param[in,out]	husart : handle to USART HW
+  *
+  * @return None
+  *****************************************************************************
   */
 void logUsartInit(UART_HandleTypeDef *husart)
 {
-    pLogUsart = husart;
+  husart->Instance = USART2;
+  husart->Init.BaudRate = 115200;
+  husart->Init.WordLength = UART_WORDLENGTH_8B;
+  husart->Init.StopBits = UART_STOPBITS_1;
+  husart->Init.Parity = UART_PARITY_NONE;
+  husart->Init.Mode = UART_MODE_TX_RX;
+  husart->Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  husart->Init.OverSampling = UART_OVERSAMPLING_16;
+  //husart->Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  //husart->AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  HAL_UART_Init(husart);
+  
+  pLogUsart = husart;
 }
 
 /**
+  *****************************************************************************
   * @brief  This function Transmit data via USART
-	* @param	data : data to be transmitted
-	* @param	dataLen : length of data to be transmitted
-  * @retval ERR_INVALID_HANDLE : in case the SPI HW is not initalized yet
-  * @retval others : HAL status
+  *
+  * @param[in]	data    : data to be transmitted
+  * @param[in]	dataLen : length of data to be transmitted
+  *
+  * @retval ERR_INVALID_HANDLE : in case the UART HW is not initalized yet
+  * @retval others             : HAL status
+  *****************************************************************************
   */
 uint8_t logUsartTx(uint8_t *data, uint16_t dataLen)
 {
   if(pLogUsart == 0)
     return ERR_INVALID_HANDLE;
-
-  return HAL_UART_Transmit(pLogUsart, data, dataLen, USART_TIMEOUT);
+ #if (USE_LOGGER == LOGGER_ON)
+  { 
+    return HAL_UART_Transmit(pLogUsart, data, dataLen, USART_TIMEOUT);
+    }
+  #else
+  {
+    return 0;
+  }
+  #endif /* #if USE_LOGGER == LOGGER_ON */
 }
 
+/**
+  *****************************************************************************
+  * @brief  This function is used to write a formated string via the UART interface.
+  *
+  * @param[in]	format : data to be transmitted
+  *
+  * @return Number of data sent
+  *****************************************************************************
+  */
 int logUsart(const char* format, ...)
 {
   #if (USE_LOGGER == LOGGER_ON)
@@ -112,8 +164,16 @@ int logUsart(const char* format, ...)
   #endif /* #if USE_LOGGER == LOGGER_ON */
 }
 
-/* */
-
+/**
+  *****************************************************************************
+  * @brief  helper to convert hex data into formated string
+  *
+	* @param[in]	data : pointer to buffer to be dumped.
+	* @param[in]	dataLen : buffer length
+  *
+  * @return pointer to converted data
+  *****************************************************************************
+  */
 char* hex2Str(unsigned char * data, size_t dataLen)
 {
   #if (USE_LOGGER == LOGGER_ON)
@@ -123,18 +183,19 @@ char* hex2Str(unsigned char * data, size_t dataLen)
     char * pout = hexStr[hexStrIdx];
     uint8_t i = 0;
     uint8_t idx = hexStrIdx;
-    size_t len;  
-      
+    
+    if( dataLen > (MAX_HEX_STR_LENGTH/2) )
+    {
+      dataLen = (MAX_HEX_STR_LENGTH/2);
+    }
+    
     if(dataLen == 0)
     {
       pout[0] = 0;     
     } 
     else     
     {
-      /* Trim data that doesn't fit in buffer */
-      len = MIN( dataLen , (MAX_HEX_STR_LENGTH / 2) );
-        
-      for(; i < (len - 1); ++i)
+      for(; i < dataLen - 1; ++i)
       {
           *pout++ = hex[(*pin>>4)&0xF];
           *pout++ = hex[(*pin++)&0xF];
@@ -155,3 +216,55 @@ char* hex2Str(unsigned char * data, size_t dataLen)
   }
   #endif /* #if USE_LOGGER == LOGGER_ON */
 }
+
+void logITMTx(uint8_t *data, uint16_t dataLen)
+{
+    #if (USE_LOGGER == LOGGER_ON)
+    while (dataLen != 0)
+    {
+        ITM_SendChar(*data);
+        data++;
+        dataLen--;
+    }
+    #endif /* #if USE_LOGGER == LOGGER_ON */
+    return;
+}
+
+int logITM(const char* format, ...)
+{
+  #if (USE_LOGGER == LOGGER_ON)
+  {
+    #define LOG_BUFFER_SIZE 256
+    char buf[LOG_BUFFER_SIZE];
+    va_list argptr;
+    va_start(argptr, format);
+    int cnt = vsnprintf(buf, LOG_BUFFER_SIZE, format, argptr);
+    va_end(argptr);  
+      
+    /* */
+    logITMTx((uint8_t*)buf, strlen(buf));
+    HAL_Delay((cnt + 9)/10); /* WA to avoid ITM overflow */
+    return cnt;
+  }
+  #else
+  {
+    return 0;
+  }
+  #endif /* #if USE_LOGGER == LOGGER_ON */
+}
+/**
+  * @}
+  */ 
+
+/**
+  * @}
+  */ 
+
+/**
+  * @}
+  */ 
+
+/**
+  * @}
+  */ 
+

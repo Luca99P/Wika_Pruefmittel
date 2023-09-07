@@ -1,45 +1,21 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_t4t.h
+  * @author  MMY Application Team
+  * @brief   Provides convenience methods and definitions for T4T (ISO7816-4)
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2018 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_t4t.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief Provides convenience methods and definitions for T4T (ISO7816-4)
- *  
- *  This module provides an interface to exchange T4T APDUs according to 
- *  NFC Forum T4T and ISO7816-4
- *  
- *  This implementation was based on the following specs:
- *    - ISO/IEC 7816-4  3rd Edition 2013-04-15
- *    - NFC Forum T4T Technical Specification 1.0 2017-08-28
- *  
- */
+  ******************************************************************************
+  */
 
 /*
  ******************************************************************************
@@ -99,7 +75,7 @@
  */
 
 /*******************************************************************************/ 
-ReturnCode rfalT4TPollerComposeCAPDU( rfalT4tCApduParam *apduParam )
+ReturnCode rfalT4TPollerComposeCAPDU( const rfalT4tCApduParam *apduParam )
 {
     uint8_t                  hdrLen;
     uint16_t                 msgIt;
@@ -197,6 +173,11 @@ ReturnCode rfalT4TPollerParseRAPDU( rfalT4tRApduParam *apduParam )
 ReturnCode rfalT4TPollerComposeSelectAppl( rfalIsoDepApduBufFormat *cApduBuf, const uint8_t* aid, uint8_t aidLen, uint16_t *cApduLen )
 {   
     rfalT4tCApduParam cAPDU;
+    
+    if( cApduBuf == NULL )
+    {
+        return ERR_PARAM;
+    }
 
     /* CLA INS P1  P2   Lc  Data   Le  */
     /* 00h A4h 00h 00h  07h AID    00h */
@@ -211,7 +192,7 @@ ReturnCode rfalT4TPollerComposeSelectAppl( rfalIsoDepApduBufFormat *cApduBuf, co
     cAPDU.cApduBuf = cApduBuf;
     cAPDU.cApduLen = cApduLen;
     
-    if( aidLen > 0U )
+    if( (aid != NULL) && (aidLen > 0U) )
     {
         ST_MEMCPY( cAPDU.cApduBuf->apdu, aid, aidLen );
     }
@@ -224,6 +205,11 @@ ReturnCode rfalT4TPollerComposeSelectAppl( rfalIsoDepApduBufFormat *cApduBuf, co
 ReturnCode rfalT4TPollerComposeSelectFile( rfalIsoDepApduBufFormat *cApduBuf, const uint8_t* fid, uint8_t fidLen, uint16_t *cApduLen )
 {   
     rfalT4tCApduParam cAPDU;
+    
+    if( cApduBuf == NULL )
+    {
+        return ERR_PARAM;
+    }
 
     /* CLA INS P1  P2   Lc  Data   Le  */
     /* 00h A4h 00h 0Ch  02h FID    -   */    
@@ -238,7 +224,7 @@ ReturnCode rfalT4TPollerComposeSelectFile( rfalIsoDepApduBufFormat *cApduBuf, co
     cAPDU.cApduBuf = cApduBuf;
     cAPDU.cApduLen = cApduLen;
     
-    if( fidLen > 0U )
+    if( (fid != NULL) && (fidLen > 0U) )
     {
         ST_MEMCPY( cAPDU.cApduBuf->apdu, fid, fidLen );
     }
@@ -251,6 +237,11 @@ ReturnCode rfalT4TPollerComposeSelectFile( rfalIsoDepApduBufFormat *cApduBuf, co
 ReturnCode rfalT4TPollerComposeSelectFileV1Mapping( rfalIsoDepApduBufFormat *cApduBuf, const uint8_t* fid, uint8_t fidLen, uint16_t *cApduLen )
 {   
     rfalT4tCApduParam cAPDU;
+    
+    if( cApduBuf == NULL )
+    {
+        return ERR_PARAM;
+    }
     
     /* CLA INS P1  P2   Lc  Data   Le  */
     /* 00h A4h 00h 00h  02h FID    -   */      
@@ -265,7 +256,7 @@ ReturnCode rfalT4TPollerComposeSelectFileV1Mapping( rfalIsoDepApduBufFormat *cAp
     cAPDU.cApduBuf = cApduBuf;
     cAPDU.cApduLen = cApduLen;
     
-    if( fidLen > 0U )
+    if( (fid != NULL) && (fidLen > 0U) )
     {
         ST_MEMCPY( cAPDU.cApduBuf->apdu, fid, fidLen );
     }
@@ -278,6 +269,8 @@ ReturnCode rfalT4TPollerComposeSelectFileV1Mapping( rfalIsoDepApduBufFormat *cAp
 ReturnCode rfalT4TPollerComposeReadData( rfalIsoDepApduBufFormat *cApduBuf, uint16_t offset, uint8_t expLen, uint16_t *cApduLen )
 {    
     rfalT4tCApduParam cAPDU;
+
+    ST_MEMSET( &cAPDU, 0x00, sizeof(rfalT4tCApduParam) );
   
     /* CLA INS P1  P2   Lc  Data   Le  */
     /* 00h B0h [Offset] -   -      len */     
@@ -291,7 +284,7 @@ ReturnCode rfalT4TPollerComposeReadData( rfalIsoDepApduBufFormat *cApduBuf, uint
     cAPDU.cApduBuf = cApduBuf;
     cAPDU.cApduLen = cApduLen;
     
-    return rfalT4TPollerComposeCAPDU( &cAPDU );
+    return rfalT4TPollerComposeCAPDU( &cAPDU ); 
 }
 
 
@@ -330,6 +323,13 @@ ReturnCode rfalT4TPollerComposeReadDataODO( rfalIsoDepApduBufFormat *cApduBuf, u
 ReturnCode rfalT4TPollerComposeWriteData( rfalIsoDepApduBufFormat *cApduBuf, uint16_t offset, const uint8_t* data, uint8_t dataLen, uint16_t *cApduLen )
 {    
     rfalT4tCApduParam cAPDU;
+    
+    if( cApduBuf == NULL )
+    {
+        return ERR_PARAM;
+    }
+
+    ST_MEMSET( &cAPDU, 0x00, sizeof(rfalT4tCApduParam) );
 
 
     /* CLA INS P1  P2   Lc  Data   Le  */
@@ -344,7 +344,7 @@ ReturnCode rfalT4TPollerComposeWriteData( rfalIsoDepApduBufFormat *cApduBuf, uin
     cAPDU.cApduBuf = cApduBuf;
     cAPDU.cApduLen = cApduLen;
     
-    if( dataLen > 0U )
+    if( (data != NULL) && (dataLen > 0U) )
     {
         ST_MEMCPY( cAPDU.cApduBuf->apdu, data, dataLen );
     }
@@ -357,6 +357,13 @@ ReturnCode rfalT4TPollerComposeWriteDataODO( rfalIsoDepApduBufFormat *cApduBuf, 
 {    
     rfalT4tCApduParam cAPDU;
     uint8_t           dataIt;
+    
+    if( cApduBuf == NULL )
+    {
+        return ERR_PARAM;
+    }
+
+    ST_MEMSET( &cAPDU, 0x00, sizeof(rfalT4tCApduParam) );
         
     /* CLA INS P1  P2   Lc  Data                     Le  */
     /* 00h D7h 00h 00h  len 54 03 xxyyzz 53 Ld data  -   */
@@ -384,7 +391,7 @@ ReturnCode rfalT4TPollerComposeWriteDataODO( rfalIsoDepApduBufFormat *cApduBuf, 
         return (ERR_NOMEM);
     }
     
-    if( dataLen > 0U )
+    if( (data != NULL) && (dataLen > 0U) )
     {
         ST_MEMCPY( &cAPDU.cApduBuf->apdu[dataIt], data, dataLen );
     }

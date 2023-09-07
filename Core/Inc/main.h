@@ -31,7 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+//#include "nfc08a1.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -53,6 +53,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+HAL_StatusTypeDef spiTxRx(const uint8_t *txData, uint8_t *rxData, uint16_t length);
 
 /* USER CODE END EFP */
 
@@ -70,20 +71,26 @@ void Error_Handler(void);
 #define USART_RX_GPIO_Port GPIOA
 #define LED_B_Pin GPIO_PIN_4
 #define LED_B_GPIO_Port GPIOA
+#define RS485_EN_TX_Pin GPIO_PIN_5
+#define RS485_EN_TX_GPIO_Port GPIOC
 #define LED_A_Pin GPIO_PIN_0
 #define LED_A_GPIO_Port GPIOB
+#define START_RFID_Pin GPIO_PIN_13
+#define START_RFID_GPIO_Port GPIOB
+#define CHECK_RFID_Pin GPIO_PIN_14
+#define CHECK_RFID_GPIO_Port GPIOB
 #define LED_FIELD_Pin GPIO_PIN_8
 #define LED_FIELD_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define START_RS485_Pin GPIO_PIN_10
+#define START_RS485_GPIO_Port GPIOC
+#define CHECK_RS485_Pin GPIO_PIN_11
+#define CHECK_RS485_GPIO_Port GPIOC
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
-#define LED_V_Pin GPIO_PIN_4
-#define LED_V_GPIO_Port GPIOB
-#define LED_AP2P_Pin GPIO_PIN_5
-#define LED_AP2P_GPIO_Port GPIOB
 #define SPI1_CS_Pin GPIO_PIN_6
 #define SPI1_CS_GPIO_Port GPIOB
 

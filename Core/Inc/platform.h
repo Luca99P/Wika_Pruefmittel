@@ -1,60 +1,36 @@
-/******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
-  *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
-  *
-  *        http://www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-/*! \file
- *
- *  \author 
- *
- *  \brief Platform header file. Defining platform independent functionality.
- *
- */
-
-
-/*
- *      PROJECT:   
- *      $Revision: $
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file platform.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief Platform specific definition layer  
+/**
+ ******************************************************************************
+ * @file    platform.h 
+ * @author  MMY Application Team
+ * @brief   Platform header file. Defining platform independent functionality. 
  *  
  *  This should contain all platform and hardware specifics such as 
  *  GPIO assignment, system resources, locks, IRQs, etc
  *  
  *  Each distinct platform/system/board must provide this definitions 
  *  for all SW layers to use
- *  
- */
+ ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
 
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-/*
-******************************************************************************
-* INCLUDES
-******************************************************************************
-*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Includes ------------------------------------------------------------------*/
 #ifdef STM32L476xx
 #include "stm32l4xx_hal.h"
 #else 
@@ -63,76 +39,143 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <limits.h>
+#include <math.h>
 
-#include "spi.h"
+#include "st_errno.h"
 #include "timer.h"
 #include "main.h"
 #include "logger.h"
 
 
-/*
-******************************************************************************
-* GLOBAL DEFINES
-******************************************************************************
-*/
-#define ST25R391X_SS_PIN            SPI1_CS_Pin         /*!< GPIO pin used for ST25R3911 SPI SS                */ 
-#define ST25R391X_SS_PORT           SPI1_CS_GPIO_Port   /*!< GPIO port used for ST25R3911 SPI SS port          */ 
+/** @addtogroup X-CUBE-NFC6_Applications
+ *  @{
+ */
 
-#define ST25R391X_INT_PIN           IRQ_3911_Pin        /*!< GPIO pin used for ST25R3911 External Interrupt    */
-#define ST25R391X_INT_PORT          IRQ_3911_GPIO_Port  /*!< GPIO port used for ST25R3911 External Interrupt   */
+/** @addtogroup PollingTagDetect
+ *  @{
+ */
 
-#ifdef LED_FIELD_Pin
-#define PLATFORM_LED_FIELD_PIN      LED_FIELD_Pin       /*!< GPIO pin used as field LED                        */
-#endif
+/** @defgroup PTD_Platform
+ *  @brief Demo functions containing the example code
+ * @{
+ */
 
-#ifdef LED_FIELD_GPIO_Port
-#define PLATFORM_LED_FIELD_PORT     LED_FIELD_GPIO_Port /*!< GPIO port used as field LED                       */
-#endif
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/** @defgroup PTD_Platform_Exported_Constants
+ *  @{
+ */
+//#define ST25R_SS_PIN             BUS_SPI1_NSS_GPIO_PIN    /*!< GPIO pin used for ST25R SPI SS                */
+//#define ST25R_SS_PORT            BUS_SPI1_NSS_GPIO_PORT   /*!< GPIO port used for ST25R SPI SS port          */
 
+#define ST25R_SS_PIN            SPI1_CS_Pin         /*!< GPIO pin used for ST25R3911 SPI SS                */
+#define ST25R_SS_PORT           SPI1_CS_GPIO_Port   /*!< GPIO port used for ST25R3911 SPI SS port          */
 
-#define PLATFORM_LED_A_PIN           LED_A_Pin             /*!< GPIO pin used for LED A    */
-#define PLATFORM_LED_A_PORT          LED_A_GPIO_Port       /*!< GPIO port used for LED A   */
-#define PLATFORM_LED_B_PIN           LED_B_Pin             /*!< GPIO pin used for LED B    */
-#define PLATFORM_LED_B_PORT          LED_B_GPIO_Port       /*!< GPIO port used for LED B   */
-#define PLATFORM_LED_F_PIN           LED_F_Pin             /*!< GPIO pin used for LED F    */
-#define PLATFORM_LED_F_PORT          LED_F_GPIO_Port       /*!< GPIO port used for LED F   */
-#define PLATFORM_LED_V_PIN           LED_V_Pin             /*!< GPIO pin used for LED V    */
-#define PLATFORM_LED_V_PORT          LED_V_GPIO_Port       /*!< GPIO port used for LED V   */
-#define PLATFORM_LED_AP2P_PIN        LED_AP2P_Pin          /*!< GPIO pin used for LED AP2P */
-#define PLATFORM_LED_AP2P_PORT       LED_AP2P_GPIO_Port    /*!< GPIO port used for LED AP2P*/
+//#ifndef RFAL_USE_I2C
+//#define ST25R_INT_PIN            BUS_SPI1_IRQ_GPIO_PIN    /*!< GPIO pin used for ST25R IRQ                   */
+//#define ST25R_INT_PORT           BUS_SPI1_IRQ_GPIO_PORT   /*!< GPIO port used for ST25R IRQ port             */
+//#else
+//#define ST25R_INT_PIN            BUS_I2C1_IRQ_GPIO_PIN    /*!< GPIO pin used for ST25R IRQ                   */
+//#define ST25R_INT_PORT           BUS_I2C1_IRQ_GPIO_PORT   /*!< GPIO port used for ST25R IRQ port             */
+//#endif /* RFAL_USE_I2C */
+#define ST25R_INT_PIN           IRQ_3911_Pin        /*!< GPIO pin used for ST25R3911 External Interrupt    */
+#define ST25R_INT_PORT          IRQ_3911_GPIO_Port  /*!< GPIO port used for ST25R3911 External Interrupt   */
+#define IRQ_ST25R_EXTI_IRQn      EXTI0_IRQn
 
-#define PLATFORM_USER_BUTTON_PIN     B1_Pin                /*!< GPIO pin user button       */
-#define PLATFORM_USER_BUTTON_PORT    B1_GPIO_Port          /*!< GPIO port user button      */
+//#ifdef LED_FIELD_Pin
+//#ifdef ST25R3916
+//#define PLATFORM_LED_FIELD_PIN       NFC06A1_LED6_PIN         /*!< GPIO pin used as field LED                        */
+//#endif /* ST25R3916 */
+//#ifdef ST25R3916B
+//#define PLATFORM_LED_FIELD_PIN       NFC08A1_LED6_PIN         /*!< GPIO pin used as field LED                        */
+//#endif /* ST25R3916B */
+//#endif
+//
+//#ifdef LED_FIELD_GPIO_Port
+//#ifdef ST25R3916
+//#define PLATFORM_LED_FIELD_PORT      NFC06A1_LED6_PIN_PORT    /*!< GPIO port used as field LED                       */
+//#endif /* ST25R3916 */
+//#ifdef ST25R3916B
+//#define PLATFORM_LED_FIELD_PORT      NFC08A1_LED6_PIN_PORT    /*!< GPIO port used as field LED                       */
+//#endif /* ST25R3916B */
+//#endif
+//
+//#ifdef ST25R3916
+//#define PLATFORM_LED_A_PIN           NFC06A1_LED3_PIN         /*!< GPIO pin used for LED A    */
+//#define PLATFORM_LED_A_PORT          NFC06A1_LED3_PIN_PORT    /*!< GPIO port used for LED A   */
+//#define PLATFORM_LED_B_PIN           NFC06A1_LED2_PIN         /*!< GPIO pin used for LED B    */
+//#define PLATFORM_LED_B_PORT          NFC06A1_LED2_PIN_PORT    /*!< GPIO port used for LED B   */
+//#define PLATFORM_LED_F_PIN           NFC06A1_LED1_PIN         /*!< GPIO pin used for LED F    */
+//#define PLATFORM_LED_F_PORT          NFC06A1_LED1_PIN_PORT    /*!< GPIO port used for LED F   */
+//#define PLATFORM_LED_V_PIN           NFC06A1_LED4_PIN         /*!< GPIO pin used for LED V    */
+//#define PLATFORM_LED_V_PORT          NFC06A1_LED4_PIN_PORT    /*!< GPIO port used for LED V   */
+//#define PLATFORM_LED_AP2P_PIN        NFC06A1_LED5_PIN         /*!< GPIO pin used for LED AP2P */
+//#define PLATFORM_LED_AP2P_PORT       NFC06A1_LED5_PIN_PORT    /*!< GPIO port used for LED AP2P*/
+//#endif /* ST25R3916 */
+//#ifdef ST25R3916B
+//#define PLATFORM_LED_A_PIN           NFC08A1_LED3_PIN         /*!< GPIO pin used for LED A    */
+//#define PLATFORM_LED_A_PORT          NFC08A1_LED3_PIN_PORT    /*!< GPIO port used for LED A   */
+//#define PLATFORM_LED_B_PIN           NFC08A1_LED2_PIN         /*!< GPIO pin used for LED B    */
+//#define PLATFORM_LED_B_PORT          NFC08A1_LED2_PIN_PORT    /*!< GPIO port used for LED B   */
+//#define PLATFORM_LED_F_PIN           NFC08A1_LED1_PIN         /*!< GPIO pin used for LED F    */
+//#define PLATFORM_LED_F_PORT          NFC08A1_LED1_PIN_PORT    /*!< GPIO port used for LED F   */
+//#define PLATFORM_LED_V_PIN           NFC08A1_LED4_PIN         /*!< GPIO pin used for LED V    */
+//#define PLATFORM_LED_V_PORT          NFC08A1_LED4_PIN_PORT    /*!< GPIO port used for LED V   */
+//#define PLATFORM_LED_AP2P_PIN        NFC08A1_LED5_PIN         /*!< GPIO pin used for LED AP2P */
+//#define PLATFORM_LED_AP2P_PORT       NFC08A1_LED5_PIN_PORT    /*!< GPIO port used for LED AP2P*/
+//#endif /* ST25R3916B */
+//
+#define PLATFORM_LED_FIELD_PIN       LED_FIELD_Pin         /*!< GPIO pin used as field LED      */
+#define PLATFORM_LED_FIELD_PORT      LED_FIELD_GPIO_Port    /*!< GPIO port used as field LED                       */
+#define PLATFORM_LED_A_PIN           LED_A_Pin         /*!< GPIO pin used for LED A    */
+#define PLATFORM_LED_A_PORT          LED_A_GPIO_Port    /*!< GPIO port used for LED A   */
+#define PLATFORM_LED_B_PIN           LED_B_Pin         /*!< GPIO pin used for LED B    */
+#define PLATFORM_LED_B_PORT          LED_B_GPIO_Port    /*!< GPIO port used for LED B   */
+#define PLATFORM_LED_F_PIN           LED_F_Pin         /*!< GPIO pin used for LED F    */
+#define PLATFORM_LED_F_PORT          LED_F_GPIO_Port    /*!< GPIO port used for LED F   */
+//#define PLATFORM_LED_V_PIN           LED_V_Pin         /*!< GPIO pin used for LED V    */
+//#define PLATFORM_LED_V_PORT          LED_V_GPIO_Port    /*!< GPIO port used for LED V   */
+//#define PLATFORM_LED_AP2P_PIN        LED_AP2P_Pin         /*!< GPIO pin used for LED AP2P */
+//#define PLATFORM_LED_AP2P_PORT       LED_AP2P_GPIO_Port    /*!< GPIO port used for LED AP2P*/
 
+#define PLATFORM_USER_BUTTON_PIN     USER_BUTTON_PIN          /*!< GPIO pin user button       */
+#define PLATFORM_USER_BUTTON_PORT    USER_BUTTON_GPIO_PORT    /*!< GPIO port user button      */
+/**
+  * @}
+  */
 
-/*
-******************************************************************************
-* GLOBAL MACROS
-******************************************************************************
-*/
-#define platformProtectST25R391xComm()                do{ globalCommProtectCnt++; __DSB();NVIC_DisableIRQ(EXTI0_IRQn);__DSB();__ISB();}while(0) /*!< Protect unique access to ST25R391x communication channel - IRQ disable on single thread environment (MCU) ; Mutex lock on a multi thread environment      */
-#define platformUnprotectST25R391xComm()              do{ if (--globalCommProtectCnt==0U) {NVIC_EnableIRQ(EXTI0_IRQn);} }while(0)               /*!< Unprotect unique access to ST25R391x communication channel - IRQ enable on a single thread environment (MCU) ; Mutex unlock on a multi thread environment */
+/* Exported macro ------------------------------------------------------------*/
+/** @defgroup PTD_Platform_Exported_Macro
+ *  @{
+ */
+#define platformProtectST25RComm()                do{ globalCommProtectCnt++;                  \
+                                                          __DSB();NVIC_DisableIRQ(IRQ_ST25R_EXTI_IRQn); \
+                                                          __DSB();                             \
+                                                          __ISB();                             \
+                                                        }while(0)                                   /*!< Protect unique access to ST25R communication channel - IRQ disable on single thread environment (MCU) ; Mutex lock on a multi thread environment      */
+#define platformUnprotectST25RComm()              do{ globalCommProtectCnt--;             \
+                                                          if (globalCommProtectCnt == 0U) \
+                                                          {                               \
+                                                            NVIC_EnableIRQ(IRQ_ST25R_EXTI_IRQn);   \
+                                                          }                               \
+                                                        }while(0)                                   /*!< Unprotect unique access to ST25R communication channel - IRQ enable on a single thread environment (MCU) ; Mutex unlock on a multi thread environment */
 
-#define platformProtectST25R391xIrqStatus()           platformProtectST25R391xComm()                /*!< Protect unique access to IRQ status var - IRQ disable on single thread environment (MCU) ; Mutex lock on a multi thread environment */
-#define platformUnprotectST25R391xIrqStatus()         platformUnprotectST25R391xComm()              /*!< Unprotect the IRQ status var - IRQ enable on a single thread environment (MCU) ; Mutex unlock on a multi thread environment         */
+#define platformProtectST25RIrqStatus()           platformProtectST25RComm()                /*!< Protect unique access to IRQ status var - IRQ disable on single thread environment (MCU) ; Mutex lock on a multi thread environment */
+#define platformUnprotectST25RIrqStatus()         platformUnprotectST25RComm()              /*!< Unprotect the IRQ status var - IRQ enable on a single thread environment (MCU) ; Mutex unlock on a multi thread environment         */
 
 #define platformProtectWorker()                                                                     /* Protect RFAL Worker/Task/Process from concurrent execution on multi thread platforms   */
 #define platformUnprotectWorker()                                                                   /* Unprotect RFAL Worker/Task/Process from concurrent execution on multi thread platforms */
 
-
-#define platformIrqST25R3911SetCallback( cb )          
-#define platformIrqST25R3911PinInitialize()                
-
-#define platformIrqST25R3916SetCallback( cb )          
-#define platformIrqST25R3916PinInitialize()            
-
+#define platformIrqST25RSetCallback( cb )
+#define platformIrqST25RPinInitialize()
 
 #define platformLedsInitialize()                                                                    /*!< Initializes the pins used as LEDs to outputs*/
 
-#define platformLedOff( port, pin )                   platformGpioClear((port), (pin))              /*!< Turns the given LED Off                     */
-#define platformLedOn( port, pin )                    platformGpioSet((port), (pin))                /*!< Turns the given LED On                      */
-#define platformLedToogle( port, pin )                platformGpioToogle((port), (pin))             /*!< Toogle the given LED                        */
+#define platformLedOff( port, pin )                   platformGpioClear(port, pin)                  /*!< Turns the given LED Off                     */
+#define platformLedOn( port, pin )                    platformGpioSet(port, pin)                    /*!< Turns the given LED On                      */
+#define platformLedToogle( port, pin )                platformGpioToogle(port, pin)                 /*!< Toogle the given LED                        */
 
 #define platformGpioSet( port, pin )                  HAL_GPIO_WritePin(port, pin, GPIO_PIN_SET)    /*!< Turns the given GPIO High                   */
 #define platformGpioClear( port, pin )                HAL_GPIO_WritePin(port, pin, GPIO_PIN_RESET)  /*!< Turns the given GPIO Low                    */
@@ -142,17 +185,20 @@
 
 #define platformTimerCreate( t )                      timerCalculateTimer(t)                        /*!< Create a timer with the given time (ms)     */
 #define platformTimerIsExpired( timer )               timerIsExpired(timer)                         /*!< Checks if the given timer is expired        */
+#define platformTimerDestroy( timer )                                                               /*!< Stop and release the given timer            */
 #define platformDelay( t )                            HAL_Delay( t )                                /*!< Performs a delay for the given time (ms)    */
 
 #define platformGetSysTick()                          HAL_GetTick()                                 /*!< Get System Tick ( 1 tick = 1 ms)            */
 
-#define platformSpiSelect()                           platformGpioClear( ST25R391X_SS_PORT, ST25R391X_SS_PIN ) /*!< SPI SS\CS: Chip|Slave Select                */
-#define platformSpiDeselect()                         platformGpioSet( ST25R391X_SS_PORT, ST25R391X_SS_PIN )   /*!< SPI SS\CS: Chip|Slave Deselect              */
-#define platformSpiTxRx( txBuf, rxBuf, len )          spiTxRx( (txBuf), (rxBuf), (len) )            /*!< SPI transceive                              */
+#define platformErrorHandle()                         Error_Handler(/*__FILE__,__LINE__*/)             /*!< Global error handler or trap                */
+
+#define platformSpiSelect()                           platformGpioClear(ST25R_SS_PORT, ST25R_SS_PIN)/*!< SPI SS\CS: Chip|Slave Select                */
+#define platformSpiDeselect()                         platformGpioSet(ST25R_SS_PORT, ST25R_SS_PIN)  /*!< SPI SS\CS: Chip|Slave Deselect              */
+#define platformSpiTxRx( txBuf, rxBuf, len )          spiTxRx(txBuf, rxBuf, len)          /*!< SPI transceive                              */
 
 
-#define platformI2CTx( txBuf, len )                                                                 /*!< I2C Transmit                                */
-#define platformI2CRx( txBuf, len )                                                                 /*!< I2C Receive                                 */
+#define platformI2CTx( txBuf, len, last, txOnly )     BSP_I2C1_SequencialSend((uint16_t)0xA0, (uint8_t *)(txBuf), (len), last, txOnly ) /*!< I2C Transmit                                */
+#define platformI2CRx( txBuf, len )                   BSP_I2C1_SequencialRecv((uint16_t)0xA0, rxBuf, len )           /*!< I2C Receive                                 */
 #define platformI2CStart()                                                                          /*!< I2C Start condition                         */
 #define platformI2CStop()                                                                           /*!< I2C Stop condition                          */
 #define platformI2CRepeatStart()                                                                    /*!< I2C Repeat Start                            */
@@ -160,6 +206,10 @@
 #define platformI2CSlaveAddrRD(add)                                                                 /*!< I2C Slave address for Read operation        */
 
 #define platformLog(...)                              logUsart(__VA_ARGS__)                         /*!< Log  method                                 */
+
+/**
+  * @}
+  */
 
 /*
 ******************************************************************************
@@ -174,8 +224,9 @@ extern uint8_t globalCommProtectCnt;                      /* Global Protection C
 ******************************************************************************
 */
 
-#define RFAL_FEATURE_LISTEN_MODE               false      /*!< Enable/Disable RFAL support for Listen Mode                               */
+#define RFAL_FEATURE_LISTEN_MODE               true       /*!< Enable/Disable RFAL support for Listen Mode                               */
 #define RFAL_FEATURE_WAKEUP_MODE               true       /*!< Enable/Disable RFAL support for the Wake-Up mode                          */
+#define RFAL_FEATURE_LOWPOWER_MODE             false      /*!< Enable/Disable RFAL support for the Low Power mode                        */
 #define RFAL_FEATURE_NFCA                      true       /*!< Enable/Disable RFAL support for NFC-A (ISO14443A)                         */
 #define RFAL_FEATURE_NFCB                      true       /*!< Enable/Disable RFAL support for NFC-B (ISO14443B)                         */
 #define RFAL_FEATURE_NFCF                      true       /*!< Enable/Disable RFAL support for NFC-F (FeliCa)                            */
@@ -184,18 +235,47 @@ extern uint8_t globalCommProtectCnt;                      /* Global Protection C
 #define RFAL_FEATURE_T2T                       true       /*!< Enable/Disable RFAL support for T2T                                       */
 #define RFAL_FEATURE_T4T                       true       /*!< Enable/Disable RFAL support for T4T                                       */
 #define RFAL_FEATURE_ST25TB                    true       /*!< Enable/Disable RFAL support for ST25TB                                    */
-#define RFAL_FEATURE_ST25xV                    true       /*!< Enable/Disable RFAL support for ST25TV/ST25DV                             */
+#define RFAL_FEATURE_ST25xV                    true       /*!< Enable/Disable RFAL support for  ST25TV/ST25DV                            */
 #define RFAL_FEATURE_DYNAMIC_ANALOG_CONFIG     false      /*!< Enable/Disable Analog Configs to be dynamically updated (RAM)             */
-#define RFAL_FEATURE_DYNAMIC_POWER             false      /*!< Enable/Disable RFAL dynamic power support                                 */
+#define RFAL_FEATURE_DPO                       false      /*!< Enable/Disable RFAL Dynamic Power Output support                          */
 #define RFAL_FEATURE_ISO_DEP                   true       /*!< Enable/Disable RFAL support for ISO-DEP (ISO14443-4)                      */
 #define RFAL_FEATURE_ISO_DEP_POLL              true       /*!< Enable/Disable RFAL support for Poller mode (PCD) ISO-DEP (ISO14443-4)    */
-#define RFAL_FEATURE_ISO_DEP_LISTEN            false      /*!< Enable/Disable RFAL support for Listen mode (PICC) ISO-DEP (ISO14443-4)   */
+#define RFAL_FEATURE_ISO_DEP_LISTEN            true       /*!< Enable/Disable RFAL support for Listen mode (PICC) ISO-DEP (ISO14443-4)   */
 #define RFAL_FEATURE_NFC_DEP                   true       /*!< Enable/Disable RFAL support for NFC-DEP (NFCIP1/P2P)                      */
 
-
 #define RFAL_FEATURE_ISO_DEP_IBLOCK_MAX_LEN    256U       /*!< ISO-DEP I-Block max length. Please use values as defined by rfalIsoDepFSx */
-#define RFAL_FEATURE_ISO_DEP_APDU_MAX_LEN      1024U      /*!< ISO-DEP APDU max length. Please use multiples of I-Block max length       */
+#define RFAL_FEATURE_NFC_DEP_BLOCK_MAX_LEN     254U       /*!< NFC-DEP Block/Payload length. Allowed values: 64, 128, 192, 254           */
+#define RFAL_FEATURE_NFC_RF_BUF_LEN            258U       /*!< RF buffer length used by RFAL NFC layer                                   */
+
+#define RFAL_FEATURE_ISO_DEP_APDU_MAX_LEN      512U       /*!< ISO-DEP APDU max length. Please use multiples of I-Block max length       */
+#define RFAL_FEATURE_NFC_DEP_PDU_MAX_LEN       512U       /*!< NFC-DEP PDU max length.                                                   */
+
+/*
+******************************************************************************
+* RFAL CUSTOM SETTINGS
+******************************************************************************
+  Custom analog configs are used to cope with Automatic Antenna Tuning (AAT)
+  that are optimized differently for each board.
+*/
+#define RFAL_ANALOG_CONFIG_CUSTOM                         /*!< Use Custom Analog Configs when defined                                    */
+
+/* Exported variables --------------------------------------------------------*/
+/* Exported functions ------------------------------------------------------- */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+/**
+  * @}
+  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PLATFORM_H */
-
-

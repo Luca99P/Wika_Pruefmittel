@@ -1,53 +1,21 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_nfcf.h
+  * @author  MMY Application Team
+  * @brief   Implementation of NFC-F Poller (FeliCa PCD) device
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_nfcf.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief Implementation of NFC-F Poller (FeliCa PCD) device
- *
- *  The definitions and helpers methods provided by this module are 
- *  aligned with NFC-F (FeliCa - JIS X6319-4)
- *  
- *  
- * \addtogroup RFAL
- * @{
- *
- * \addtogroup RFAL-AL
- * \brief RFAL Abstraction Layer
- * @{
- *
- * \addtogroup NFC-F
- * \brief RFAL NFC-F Module
- * @{  
- *  
- */
+  ******************************************************************************
+  */
 
 
 #ifndef RFAL_NFCF_H
@@ -72,7 +40,7 @@
 #define RFAL_NFCF_SENSF_RES_LEN_MIN             16U      /*!< SENSF_RES minimum length                          */
 #define RFAL_NFCF_SENSF_RES_LEN_MAX             18U      /*!< SENSF_RES maximum length                          */
 #define RFAL_NFCF_SENSF_RES_PAD0_LEN            2U       /*!< SENSF_RES PAD0 length                             */
-#define RFAL_NFCF_SENSF_RES_PAD1_LEN            2U       /*!< SENSF_RES PAD1 length                             */
+#define RFAL_NFCF_SENSF_RES_PAD1_LEN            3U       /*!< SENSF_RES PAD1 length                             */
 #define RFAL_NFCF_SENSF_RES_RD_LEN              2U       /*!< SENSF_RES Request Data length                     */
 #define RFAL_NFCF_SENSF_RES_BYTE1               1U       /*!< SENSF_RES first byte value                        */
 #define RFAL_NFCF_SENSF_SC_LEN                  2U       /*!< Felica SENSF_REQ System Code length               */
@@ -86,7 +54,10 @@
 #define RFAL_NFCF_CMD_POS                        0U      /*!< Command/Responce code length                      */
 #define RFAL_NFCF_CMD_LEN                        1U      /*!< Command/Responce code length                      */
 #define RFAL_NFCF_LENGTH_LEN                     1U      /*!< LEN field length                                  */
-#define RFAL_NFCF_HEADER_LEN                     (RFAL_NFCF_LENGTH_LEN + RFAL_NFCF_CMD_LEN) /*!< Header length*/
+#define RFAL_NFCF_HEADER_LEN                     (RFAL_NFCF_LENGTH_LEN + RFAL_NFCF_CMD_LEN) /*!< Header length  */
+
+#define RFAL_NFCF_NOS_LEN                        1U      /*!< Number of Services length                         */
+#define RFAL_NFCF_NOB_LEN                        1U      /*!< Number of Blocks length                           */
 
 
 #define RFAL_NFCF_SENSF_NFCID2_BYTE1_POS         0U      /*!< NFCID2 byte1 position                             */
@@ -106,10 +77,11 @@
 #define RFAL_NFCF_STATUS_FLAG_SUCCESS            0x00U   /*!< Check response Number of Blocks position   T3T 1.0  Table 11 */
 #define RFAL_NFCF_STATUS_FLAG_ERROR              0xFFU   /*!< Check response Number of Blocks position   T3T 1.0  Table 11 */
 
-#define RFAL_NFCF_BLOCKLISTELEM_LEN              0x80U   /*!< Block List Element Length bit (2|3 bytes)      T3T 1.0 5.6.1 */
+#define RFAL_NFCF_BLOCKLISTELEM_MAX_LEN          3U      /*!< Block List Element max Length (3 bytes)        T3T 1.0 5.6.1 */
+#define RFAL_NFCF_BLOCKLISTELEM_LEN_BIT          0x80U   /*!< Block List Element Length bit (2|3 bytes)      T3T 1.0 5.6.1 */
 
-#define RFAL_NFCF_SERVICECODE_RDONLY           0x000BU   /*!< NDEF Service Code as Read-Only                 T3T 1.0 7.2.1 */
-#define RFAL_NFCF_SERVICECODE_RDWR             0x0009U   /*!< NDEF Service Code as Read and Write            T3T 1.0 7.2.1 */
+#define RFAL_NFCF_SERVICECODE_RDONLY             0x000BU /*!< NDEF Service Code as Read-Only                 T3T 1.0 7.2.1 */
+#define RFAL_NFCF_SERVICECODE_RDWR               0x0009U /*!< NDEF Service Code as Read and Write            T3T 1.0 7.2.1 */
 
 
 /*! NFC-F Felica command set   JIS X6319-4  9.1 */
@@ -180,7 +152,7 @@ typedef  uint16_t rfalNfcfServ;                 /*!< NFC-F Service Code */
 /*! NFC-F Block List Element (2 or 3 bytes element)       T3T 1.0 5.6.1 */
 typedef struct 
 {
-  uint8_t  conf;               /*!<  Access Mode | Serv Code List Order */
+    uint8_t  conf;             /*!<  Access Mode | Serv Code List Order */
     uint16_t blockNum;         /*!<  Block Number                       */
 }rfalNfcfBlockListElem;
 
@@ -240,6 +212,41 @@ ReturnCode rfalNfcfPollerCheckPresence( void );
 
 /*! 
  *****************************************************************************
+ *  \brief NFC-F Poller Start Check Presence
+ *  
+ *  This function triggers a Poll/SENSF command according to NFC Activity spec
+ *  It detects if a NCF-F device is within range
+ * 
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_NONE         : No error and some NFC-F device was detected
+ *
+ *****************************************************************************
+ */
+ReturnCode rfalNfcfPollerStartCheckPresence( void );
+
+
+/*! 
+ *****************************************************************************
+ *  \brief NFC-F Poller Get Check Presence Status
+ *  
+ *  This function gets the status of the Check Presense operation
+ *  triggered by rfalNfcfPollerStartCheckPresence()
+ * 
+ * \return ERR_IO           : Generic internal error 
+ * \return ERR_CRC          : CRC error detected
+ * \return ERR_FRAMING      : Framing error detected
+ * \return ERR_PROTO        : Protocol error detected
+ * \return ERR_TIMEOUT      : Timeout error, no listener device detected
+ * \return ERR_NONE         : No error and some NFC-F device was detected
+ *
+ *****************************************************************************
+ */
+ReturnCode rfalNfcfPollerGetCheckPresenceStatus( void );
+
+
+/*! 
+ *****************************************************************************
  * \brief NFC-F Poller Poll
  * 
  * This function sends to all PICCs in field the POLL command with the given
@@ -286,6 +293,45 @@ ReturnCode rfalNfcfPollerPoll( rfalFeliCaPollSlots slots, uint16_t sysCode, uint
  *****************************************************************************
  */
 ReturnCode rfalNfcfPollerCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcfListenDevice *nfcfDevList, uint8_t *devCnt );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-F Start Poller Collision Resolution
+ *  
+ * Triggers a Collision Resolution as defined in Activity 2.1  9.3.6
+ *
+ * \param[in]  compMode    : compliance mode to be performed
+ * \param[in]  devLimit    : device limit value, and size nfcaDevList
+ * \param[out] nfcfDevList : NFC-F listener devices list
+ * \param[out] devCnt      : Devices found counter
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or mode not set
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_NONE         : No error
+ *****************************************************************************
+ */
+ReturnCode rfalNfcfPollerStartCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcfListenDevice *nfcfDevList, uint8_t *devCnt );
+
+
+/*! 
+ *****************************************************************************
+ *  \brief NFC-F Poller Get Collision Resolution Status
+ *  
+ *  This function gets the status of the Collision Resolution operation
+ *  triggered by rfalNfcfPollerStartCollisionResolution()
+ * 
+ * \return ERR_IO           : Generic internal error 
+ * \return ERR_CRC          : CRC error detected
+ * \return ERR_FRAMING      : Framing error detected
+ * \return ERR_PROTO        : Protocol error detected
+ * \return ERR_TIMEOUT      : Timeout error, no listener device detected
+ * \return ERR_NONE         : No error and some NFC-F device was detected
+ *
+ *****************************************************************************
+ */
+ReturnCode rfalNfcfPollerGetCollisionResolutionStatus( void );
 
 
 /*! 

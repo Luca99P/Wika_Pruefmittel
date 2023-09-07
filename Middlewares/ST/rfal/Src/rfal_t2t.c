@@ -1,41 +1,22 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_t2t.c
+  * @author  MMY Application Team
+  * @brief   Provides NFC-A T2T convenience methods and definitions
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2018 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_t2t.c
- *
- *  \author 
- *
- *  \brief Provides NFC-A T2T convenience methods and definitions
- *  
- *  This module provides an interface to perform as a NFC-A Reader/Writer
- *  to handle a Type 2 Tag T2T 
- *  
- */
+  ******************************************************************************
+  */
+ 
 
 /*
  ******************************************************************************
@@ -169,7 +150,7 @@ typedef struct
     
      
     /* Transceive WRITE Command */
-    ret = rfalTransceiveBlockingTxRx( (uint8_t*)&req, sizeof(rfalT2TWriteReq), &res, sizeof(uint8_t), &rxLen, RFAL_TXRX_FLAGS_DEFAULT, RFAL_FDT_POLL_READ_MAX );
+    ret = rfalTransceiveBlockingTxRx( (uint8_t*)&req, sizeof(rfalT2TWriteReq), &res, sizeof(uint8_t), &rxLen, RFAL_TXRX_FLAGS_DEFAULT, RFAL_FDT_POLL_WRITE_MAX );
     
     /* Check for a valid ACK */
     if( (ret == ERR_INCOMPLETE_BYTE) || (ret == ERR_NONE) )

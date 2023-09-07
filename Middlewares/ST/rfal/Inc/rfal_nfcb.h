@@ -1,56 +1,21 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_nfcb.h
+  * @author  MMY Application Team
+  * @brief   Implementation of NFC-B (ISO14443B) helpers
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
-
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_nfcb.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief Implementation of NFC-B (ISO14443B) helpers 
- *  
- *  It provides a NFC-B Poller (ISO14443B PCD) interface and 
- *  also provides some NFC-B Listener (ISO14443B PICC) helpers
- *
- *  The definitions and helpers methods provided by this module are only
- *  up to ISO14443-3 layer (excluding ATTRIB)
- *  
- *  
- * \addtogroup RFAL
- * @{
- *
- * \addtogroup RFAL-AL
- * \brief RFAL Abstraction Layer
- * @{
- *
- * \addtogroup NFC-B
- * \brief RFAL NFC-B Module
- * @{
- * 
- */
+  ******************************************************************************
+  */
 
 
 #ifndef RFAL_NFCB_H
@@ -250,6 +215,49 @@ ReturnCode rfalNfcbPollerCheckPresence( rfalNfcbSensCmd cmd, rfalNfcbSlots slots
 
 /*! 
  *****************************************************************************
+ * \brief  NFC-B Poller Start Check Presence
+ *  
+ * This method starts check for a NFC-B Listen device (PICC) presence on the field
+ * by sending an ALLB_REQ (WUPB) or SENSB_REQ (REQB)
+ *  
+ * \param[in]  cmd         : Indicate if to send an ALL_REQ or a SENS_REQ
+ * \param[in]  slots       : The number of slots to be announced
+ * \param[out] sensbRes    : If received, the SENSB_RES
+ * \param[out] sensbResLen : If received, the SENSB_RES length
+ * 
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_NONE         : No error, SENSB_RES received
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerStartCheckPresence( rfalNfcbSensCmd cmd, rfalNfcbSlots slots, rfalNfcbSensbRes *sensbRes, uint8_t *sensbResLen );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-B Poller Get Check Presence Status
+ *  
+ * This method get the presence check status
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_TIMEOUT      : Timeout error, no listener device detected
+ * \return ERR_RF_COLLISION : Collision detected one or more device in the field
+ * \return ERR_PAR          : Parity error detected, one or more device in the field
+ * \return ERR_CRC          : CRC error detected, one or more device in the field
+ * \return ERR_FRAMING      : Framing error detected, one or more device in the field
+ * \return ERR_PROTO        : Protocol error detected, invalid SENSB_RES received
+ * \return ERR_NONE         : No error, SENSB_RES received
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerGetCheckPresenceStatus( void );
+
+
+/*! 
+ *****************************************************************************
  * \brief  NFC-B Poller Sleep
  *  
  * This function is used to send the SLPB_REQ (HLTB) command to put the PICC with 
@@ -271,7 +279,7 @@ ReturnCode rfalNfcbPollerSleep( const uint8_t* nfcid0 );
  *****************************************************************************
  * \brief  NFC-B Poller Slot Marker
  *  
- * This method selects a NFC-B Slot marker frame 
+ * This method sends a NFC-B Slot marker frame 
  *  
  * \param[in]  slotCode     : Slot Code [1-15] 
  * \param[out] sensbRes     : If received, the SENSB_RES
@@ -289,6 +297,47 @@ ReturnCode rfalNfcbPollerSleep( const uint8_t* nfcid0 );
  *****************************************************************************
  */
 ReturnCode rfalNfcbPollerSlotMarker( uint8_t slotCode, rfalNfcbSensbRes *sensbRes, uint8_t *sensbResLen );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-B Poller Start Slot Marker
+ *  
+ * This method starts a NFC-B Slot marker 
+ *  
+ * \param[in]  slotCode     : Slot Code [1-15] 
+ * \param[out] sensbRes     : If received, the SENSB_RES
+ * \param[out] sensbResLen  : If received, the SENSB_RES length
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_NONE         : No error, SEL_RES received
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerStartSlotMarker( uint8_t slotCode, rfalNfcbSensbRes *sensbRes, uint8_t *sensbResLen );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-B Poller Start Slot Marker
+ *  
+ * This method gets the status of the NFC-B Slot marker 
+ *  
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_TIMEOUT      : Timeout error
+ * \return ERR_PAR          : Parity error detected
+ * \return ERR_CRC          : CRC error detected
+ * \return ERR_FRAMING      : Framing error detected
+ * \return ERR_PROTO        : Protocol error detected
+ * \return ERR_NONE         : No error, SEL_RES received
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerGetSlotMarkerStatus( void );
+
 
 /*! 
  *****************************************************************************
@@ -311,6 +360,41 @@ ReturnCode rfalNfcbPollerTechnologyDetection( rfalComplianceMode compMode, rfalN
 
 /*! 
  *****************************************************************************
+ * \brief  NFC-B Start Technology Detection
+ *  
+ * This method starts the NFC-B Technology Detection as defined in the spec
+ * given in the compliance mode
+ *  
+ * \param[in]  compMode    : compliance mode to be performed
+ * \param[out] sensbRes    : location to store the SENSB_RES, if received
+ * \param[out] sensbResLen : length of the SENSB_RES, if received
+ *  
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_NONE         : No error, one or more device in the field
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerStartTechnologyDetection( rfalComplianceMode compMode, rfalNfcbSensbRes *sensbRes, uint8_t *sensbResLen );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-B Get Technology Detection Status
+ *  
+ * This method gets the NFC-B Technology Detection status
+ *  
+ * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_NONE         : No error, one or more device in the field
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerGetTechnologyDetectionStatus( void );
+
+
+/*! 
+ *****************************************************************************
  * \brief  NFC-B Poller Collision Resolution
  *  
  * NFC-B Collision resolution  Listener device/card (PICC) as 
@@ -318,7 +402,7 @@ ReturnCode rfalNfcbPollerTechnologyDetection( rfalComplianceMode compMode, rfalN
  * 
  * This function is used to perform collision resolution for detection in case 
  * of multiple NFC Forum Devices with Technology B detected. 
- * Target with valid SENSB_RES will be stored in devInfo and nfcbDevCount incremented.  
+ * Target with valid SENSB_RES will be stored in nfcbDevList and devCnt incremented.  
  *
  * \param[in]  compMode    : compliance mode to be performed
  * \param[in]  devLimit    : device limit value, and size nfcbDevList
@@ -334,6 +418,7 @@ ReturnCode rfalNfcbPollerTechnologyDetection( rfalComplianceMode compMode, rfalN
  */
 ReturnCode rfalNfcbPollerCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcbListenDevice *nfcbDevList, uint8_t *devCnt );
 
+
 /*! 
  *****************************************************************************
  * \brief  NFC-B Poller Collision Resolution Slotted
@@ -344,7 +429,7 @@ ReturnCode rfalNfcbPollerCollisionResolution( rfalComplianceMode compMode, uint8
  * 
  * This function is used to perform collision resolution for detection in case 
  * of multiple NFC Forum Devices with Technology B are detected. 
- * Target with valid SENSB_RES will be stored in devInfo and nfcbDevCount incremented.  
+ * Target with valid SENSB_RES will be stored in nfcbDevList and devCnt incremented.  
  * 
  * This method provides the means to perform a collision resolution loop with specific
  * initial and end number of slots. This allows to user to start the loop already with 
@@ -372,6 +457,91 @@ ReturnCode rfalNfcbPollerCollisionResolution( rfalComplianceMode compMode, uint8
 ReturnCode rfalNfcbPollerSlottedCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcbSlots initSlots, rfalNfcbSlots endSlots, rfalNfcbListenDevice *nfcbDevList, uint8_t *devCnt, bool *colPending );
 
 
+/*!
+ *****************************************************************************
+ * \brief  NFC-B Poller Start Collision Resolution
+ *  
+ * It starts the NFC-B Collision resolution  Listener device/card (PICC) as 
+ * defined in Activity 1.1  9.3.5
+ * 
+ * This function is used to trigger the collision resolution for detection in case 
+ * of multiple NFC Forum Devices with Technology B detected. 
+ * Target with valid SENSB_RES will be stored in nfcbDevList and devCnt incremented.  
+ *
+ * \param[in]  compMode    : compliance mode to be performed
+ * \param[in]  devLimit    : device limit value, and size nfcbDevList
+ * \param[out] nfcbDevList : NFC-B listener device info
+ * \param[out] devCnt      : devices found counter
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or mode not set
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_PROTO        : Protocol error detected
+ * \return ERR_NONE         : No error
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerStartCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcbListenDevice *nfcbDevList, uint8_t *devCnt );
+
+
+/*! 
+ *****************************************************************************
+ * \brief  NFC-B Poller Start Collision Resolution Slotted
+ *  
+ * Starts NFC-B Collision resolution Listener device/card (PICC). The sequence can 
+ * be configured to be according to NFC Forum Activity 1.1  9.3.5, ISO10373
+ * or EMVCo 
+ * 
+ * This function is used to trigger the collision resolution for detection in case 
+ * of multiple NFC Forum Devices with Technology B are detected. 
+ * Target with valid SENSB_RES will be stored in nfcbDevList and devCnt incremented.  
+ * 
+ * This method provides the means to perform a collision resolution loop with specific
+ * initial and end number of slots. This allows to user to start the loop already with 
+ * greater number of slots, and or limit the end number of slots. At the end a flag
+ * indicating whether there were collisions pending is returned.
+ * 
+ * If RFAL_COMPLIANCE_MODE_ISO is used \a initSlots must be set to RFAL_NFCB_SLOT_NUM_1
+ *  
+ *
+ * \param[in]  compMode    : compliance mode to be performed
+ * \param[in]  devLimit    : device limit value, and size nfcbDevList
+ * \param[in]  initSlots   : number of slots to open initially 
+ * \param[in]  endSlots    : number of slots when to stop collision resolution 
+ * \param[out] nfcbDevList : NFC-B listener device info
+ * \param[out] devCnt      : devices found counter
+ * \param[out] colPending  : flag indicating whether collision are still pending
+ *
+ * \return ERR_WRONG_STATE  : RFAL not initialized or mode not set
+ * \return ERR_PARAM        : Invalid parameters
+ * \return ERR_IO           : Generic internal error
+ * \return ERR_PROTO        : Protocol error detected
+ * \return ERR_NONE         : No error
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerStartSlottedCollisionResolution( rfalComplianceMode compMode, uint8_t devLimit, rfalNfcbSlots initSlots, rfalNfcbSlots endSlots, rfalNfcbListenDevice *nfcbDevList, uint8_t *devCnt, bool *colPending );
+
+
+/*!
+ *****************************************************************************
+ *  \brief  NFC-B Get Collision Resolution Status
+ *
+ *  Returns the Collision Resolution status
+ *
+ *  \return ERR_BUSY         : Operation is ongoing
+ *  \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
+ *  \return ERR_PARAM        : Invalid parameters
+ *  \return ERR_IO           : Generic internal error
+ *  \return ERR_TIMEOUT      : Timeout error
+ *  \return ERR_PAR          : Parity error detected
+ *  \return ERR_CRC          : CRC error detected
+ *  \return ERR_FRAMING      : Framing error detected
+ *  \return ERR_PROTO        : Protocol error detected
+ *  \return ERR_NONE         : No error, activation successful
+ *****************************************************************************
+ */
+ReturnCode rfalNfcbPollerGetCollisionResolutionStatus( void );
+
+
 /*! 
  *****************************************************************************
  * \brief  NFC-B TR2 code to FDT
@@ -385,7 +555,6 @@ ReturnCode rfalNfcbPollerSlottedCollisionResolution( rfalComplianceMode compMode
  *****************************************************************************
  */
 uint32_t rfalNfcbTR2ToFDT( uint8_t tr2Code );
-
 
 #endif /* RFAL_NFCB_H */
 

@@ -1,53 +1,22 @@
 
-/******************************************************************************
-  * \attention
+/**
+  ******************************************************************************
+  * @file    rfal_nfcv.h
+  * @author  MMY Application Team
+  * @brief   Implementation of NFC-V Poller (ISO15693) device
+  ******************************************************************************
+  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT 2016 STMicroelectronics</center></h2>
+  * Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.
   *
-  * Licensed under ST MYLIBERTY SOFTWARE LICENSE AGREEMENT (the "License");
-  * You may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at:
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  *        www.st.com/myliberty
-  *
-  * Unless required by applicable law or agreed to in writing, software 
-  * distributed under the License is distributed on an "AS IS" BASIS, 
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied,
-  * AND SPECIFICALLY DISCLAIMING THE IMPLIED WARRANTIES OF MERCHANTABILITY,
-  * FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  *
-******************************************************************************/
+  ******************************************************************************
+  */
 
-/*
- *      PROJECT:   ST25R391x firmware
- *      Revision:
- *      LANGUAGE:  ISO C99
- */
-
-/*! \file rfal_nfcv.h
- *
- *  \author Gustavo Patricio
- *
- *  \brief Implementation of NFC-V Poller (ISO15693) device
- *
- *  The definitions and helpers methods provided by this module 
- *  are aligned with NFC-V Digital 2.1
- *
- *
- * \addtogroup RFAL
- * @{
- *
- * \addtogroup RFAL-AL
- * \brief RFAL Abstraction Layer
- * @{
- *
- * \addtogroup NFC-V
- * \brief RFAL NFC-V Module
- * @{
- * 
- */
 
 #ifndef RFAL_NFCV_H
 #define RFAL_NFCV_H
@@ -273,7 +242,9 @@ ReturnCode rfalNfcvPollerInitialize( void );
  * This method checks if a NFC-V Listen device (VICC) is present on the field
  * by sending an Inventory (INVENTORY_REQ) 
  *  
- * \param[out] invRes : If received, the INVENTORY_RES
+ * \param[out] invRes : If received, the INVENTORY_RES. Please note that
+ *                      received invRes may contain errors and is not
+ *                      guaranteed to contain valid data.
  *
  * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
  * \return ERR_PARAM        : Invalid parameters
@@ -406,7 +377,7 @@ ReturnCode rfalNfcvPollerSelect( uint8_t flags, const uint8_t* uid );
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device to be put to be read
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to read
  * \param[out] rxBuf        : buffer to store response (also with RES_FLAGS)
  * \param[in]  rxBufLen     : length of rxBuf
@@ -433,7 +404,7 @@ ReturnCode rfalNfcvPollerReadSingleBlock( uint8_t flags, const uint8_t* uid, uin
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device to be put to be written
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to write
  * \param[in]  wrData       : data to be written on the given block
  * \param[in]  blockLen     : number of bytes of a block
@@ -459,7 +430,7 @@ ReturnCode rfalNfcvPollerWriteSingleBlock( uint8_t flags, const uint8_t* uid, ui
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  firstBlockNum  : first block to be read
  * \param[in]  numOfBlocks    : number of block to read
  * \param[out] rxBuf          : buffer to store response (also with RES_FLAGS)
@@ -489,7 +460,7 @@ ReturnCode rfalNfcvPollerReadMultipleBlocks( uint8_t flags, const uint8_t* uid, 
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  firstBlockNum  : first block to be write
  * \param[in]  numOfBlocks    : number of consecutive blocks to write
  * \param[in]  txBuf          : buffer where the request will be composed
@@ -521,7 +492,7 @@ ReturnCode rfalNfcvPollerWriteMultipleBlocks( uint8_t flags, const uint8_t* uid,
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to be locked
  *  
  * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
@@ -545,7 +516,7 @@ ReturnCode rfalNfcvPollerLockBlock( uint8_t flags, const uint8_t* uid, uint8_t b
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to be locked (16 bits)
  *  
  * \return ERR_WRONG_STATE  : RFAL not initialized or incorrect mode
@@ -569,7 +540,7 @@ ReturnCode rfalNfcvPollerExtendedLockSingleBlock( uint8_t flags, const uint8_t* 
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device to be put to be read
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to read (16 bits)
  * \param[out] rxBuf        : buffer to store response (also with RES_FLAGS)
  * \param[in]  rxBufLen     : length of rxBuf
@@ -596,7 +567,7 @@ ReturnCode rfalNfcvPollerExtendedReadSingleBlock( uint8_t flags, const uint8_t* 
  * \param[in]  flags        : Flags to be used: Sub-carrier; Data_rate; Option
  *                            for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid          : UID of the device
- *                             if not provided Select mode will be used 
+ *                             if UID is provided Addressed mode will be used
  * \param[in]  blockNum     : Number of the block to write (16 bits)
  * \param[in]  wrData       : data to be written on the given block
  * \param[in]  blockLen     : number of bytes of a block
@@ -622,7 +593,7 @@ ReturnCode rfalNfcvPollerExtendedWriteSingleBlock( uint8_t flags, const uint8_t*
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  firstBlockNum  : first block to be read (16 bits)
  * \param[in]  numOfBlocks    : number of consecutive blocks to read (16 bits)
  * \param[out] rxBuf          : buffer to store response (also with RES_FLAGS)
@@ -652,7 +623,7 @@ ReturnCode rfalNfcvPollerExtendedReadMultipleBlocks( uint8_t flags, const uint8_
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  firstBlockNum  : first block to be write (16 bits)
  * \param[in]  numOfBlocks    : number of consecutive blocks to write (16 bits)
  * \param[in]  txBuf          : buffer where the request will be composed
@@ -684,7 +655,7 @@ ReturnCode rfalNfcvPollerExtendedWriteMultipleBlocks( uint8_t flags, const uint8
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[out] rxBuf          : buffer to store response (also with RES_FLAGS)
  * \param[in]  rxBufLen       : length of rxBuf
  * \param[out] rcvLen         : number of bytes received
@@ -710,7 +681,7 @@ ReturnCode rfalNfcvPollerGetSystemInformation( uint8_t flags, const uint8_t* uid
  * \param[in]  flags          : Flags to be used: Sub-carrier; Data_rate; Option
  *                              for NFC-Forum use: RFAL_NFCV_REQ_FLAG_DEFAULT
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  requestField   : Get System info parameter request field
  * \param[out] rxBuf          : buffer to store response (also with RES_FLAGS)
  * \param[in]  rxBufLen       : length of rxBuf
@@ -741,7 +712,7 @@ ReturnCode rfalNfcvPollerExtendedGetSystemInformation( uint8_t flags, const uint
  * \param[in]  param          : Prepend parameter on certain proprietary requests
  *                              For default commands skip: RFAL_NFCV_PARAM_SKIP
  * \param[in]  uid            : UID of the device to be put to be read
- *                               if not provided Select mode will be used 
+ *                               if UID is provided Addressed mode will be used
  * \param[in]  data           : command parameters append after UID
  * \param[in]  dataLen        : command parameters Len
  * \param[out] rxBuf          : buffer to store response (also with RES_FLAGS)
