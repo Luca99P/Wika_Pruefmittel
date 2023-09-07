@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "utils.h"
-#include "platform.h"
+//#include "platform.h"
 #include "logger.h"
 #include "st_errno.h"
 #include "rfal_rf.h"
@@ -37,7 +37,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RX_BUFFER_SIZE 	100
+#define START_RS485_CMD "RS485_TEST_123"
+#define RS485_ANSWER 	"RS485_TEST_SUCCESS"
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +66,10 @@ SPI_HandleTypeDef *pSpi = NULL;
 /* P2P communication data */
 static uint8_t NFCID3[] = {0x01, 0xFE, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
 static uint8_t GB[] = {0x46, 0x66, 0x6d, 0x01, 0x01, 0x11, 0x02, 0x02, 0x07, 0x80, 0x03, 0x02, 0x00, 0x03, 0x04, 0x01, 0x32, 0x07, 0x01, 0x03};
-//uint8_t globalCommProtectCnt = 0;
+
+static uint8_t rxBuffer1[RX_BUFFER_SIZE];
+static uint8_t rxBuffer2[RX_BUFFER_SIZE];
+static uint8_t rxBuffer6[RX_BUFFER_SIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -159,7 +164,7 @@ uint16_t rfalInit(rfalNfcDiscoverParam *pDiscParam){
 }
 
 uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, uint8_t discoveryStarted){
-	uint8_t devUID[RFAL_NFCV_UID_LEN];
+	//uint8_t devUID[RFAL_NFCV_UID_LEN];
 
 	if(HAL_GPIO_ReadPin(START_RFID_GPIO_Port, START_RFID_Pin)){
 		rfalNfcWorker();                                    // Run RFAL worker periodically
@@ -175,9 +180,9 @@ uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, ui
 				rfalNfcGetActiveDevice( &pNfcDevice );
 				if(pNfcDevice->type == RFAL_NFC_LISTEN_TYPE_NFCV){
 					HAL_GPIO_WritePin(CHECK_RFID_GPIO_Port, CHECK_RFID_Pin, GPIO_PIN_SET);
-	                ST_MEMCPY( devUID, pNfcDevice->nfcid, pNfcDevice->nfcidLen );   /* Copy the UID into local var */
-	                REVERSE_BYTES( devUID, RFAL_NFCV_UID_LEN );                 /* Reverse the UID for display purposes */
-	                platformLog("ISO15693/NFC-V card found. UID: %s\r\n", hex2Str(devUID, RFAL_NFCV_UID_LEN));
+	                //ST_MEMCPY( devUID, pNfcDevice->nfcid, pNfcDevice->nfcidLen );   /* Copy the UID into local var */
+	                //REVERSE_BYTES( devUID, RFAL_NFCV_UID_LEN );                 /* Reverse the UID for display purposes */
+	                //platformLog("ISO15693/NFC-V card found. UID: %s\r\n", hex2Str(devUID, RFAL_NFCV_UID_LEN));
 				}
 				rfalNfcDeactivate( false );
 				discoveryStarted = 0;
@@ -193,45 +198,20 @@ uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, ui
 
 void checkRS485(){
 	if(HAL_GPIO_ReadPin(START_RS485_GPIO_Port, START_RS485_Pin)){
-		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_SET);
-		HAL_UART_Transmit(&huart6, (uint8_t*)"RS485_TEST_123", 14, 10);
-		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_RESET);
+		HAL_UART_DMAStop(&huart6);
+		if(strcmp((char *)rxBuffer6, (char *)RS485_ANSWER) == 0){
+			HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_SET);
+		}else{
+			rxBuffer6[0] = '\0';
+			HAL_UART_Receive_DMA(&huart6, rxBuffer6, RX_BUFFER_SIZE);
 
-		// if(HAL_UART_Receive(&huart2, Uart_buff, 1, 10) == HAL_OK)
-		// {
-
+			HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_SET);
+			HAL_UART_Transmit(&huart6, (uint8_t*)START_RS485_CMD, 14, 10);
+			HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_RESET);
+		}
 	}else{
 		HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_RESET);
 	}
-}
-
-void usartRelay(){
-	 uint8_t Uart_buff[50] = {'\0'};
-	 uint8_t buff_Len = 0;
-	 HAL_UART_Receive(&huart2, Uart_buff, 50, 10);
-	 //if(HAL_UART_Receive(&huart2, Uart_buff, 50, 10) == HAL_OK)
-	 //for(i = 0; Uart_buff[i] != '\0'  && i < 50; i++)
-	 //{
-	 buff_Len = strlen((char *)Uart_buff);
-	 if(buff_Len){
-		 HAL_UART_Transmit(&huart1, Uart_buff, buff_Len, 10);
-	 }
-	 //}
-	 Uart_buff[0] = '\0';
-
-	 HAL_UART_Receive(&huart1, Uart_buff, 50, 10);
-	 //for(i = 0; Uart_buff[i] != '\0'  && i < 50; i++)
-	 //{
-
-	 buff_Len = strlen((char *)Uart_buff);
-	 if(buff_Len){
-		 HAL_UART_Transmit(&huart2, Uart_buff, strlen((char *)Uart_buff), 10);
-	 }
-	 //}
-	 /*if(HAL_UART_Receive(&huart1, Uart_buff, 1, 10) == HAL_OK)
-	 {
-		 HAL_UART_Transmit(&huart2, Uart_buff, 1, 10);
-	 }*/
 }
 
 /* USER CODE END 0 */
@@ -244,7 +224,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   rfalNfcDiscoverParam 	discParam;
-  uint8_t              	state = 0;
+  uint8_t              	checkNfcState = 0;
   rfalNfcDevice 		*pNfcDevice = NULL;
 
   /* USER CODE END 1 */
@@ -281,17 +261,20 @@ int main(void)
   logUsartInit(&huart2);
 
   rfalInit(&discParam);
+
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxBuffer1, RX_BUFFER_SIZE);
+  __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rxBuffer2, RX_BUFFER_SIZE);
+  __HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  state = checkNFC(&discParam, pNfcDevice, state);
+	  checkNfcState = checkNFC(&discParam, pNfcDevice, checkNfcState);
 
 	  checkRS485();
-
-	  usartRelay();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -585,7 +568,18 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size){
+	if(huart == &huart1){
+		HAL_UART_Transmit(&huart2, rxBuffer1, Size, 10);
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxBuffer1, RX_BUFFER_SIZE);
+		__HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
+	}
+	if(huart == &huart2){
+		HAL_UART_Transmit(&huart1, rxBuffer2, Size, 10);
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart2, rxBuffer2, RX_BUFFER_SIZE);
+		__HAL_DMA_DISABLE_IT(huart2.hdmarx, DMA_IT_HT);
+	}
+}
 /* USER CODE END 4 */
 
 /**
