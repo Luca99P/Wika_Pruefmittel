@@ -60,6 +60,10 @@ HAL_StatusTypeDef spiTxRx(const uint8_t *txData, uint8_t *rxData, uint16_t lengt
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
+#define CHECK_RFID_Pin GPIO_PIN_2
+#define CHECK_RFID_GPIO_Port GPIOC
+#define START_RFID_Pin GPIO_PIN_3
+#define START_RFID_GPIO_Port GPIOC
 #define IRQ_3911_Pin GPIO_PIN_0
 #define IRQ_3911_GPIO_Port GPIOA
 #define IRQ_3911_EXTI_IRQn EXTI0_IRQn
@@ -75,10 +79,6 @@ HAL_StatusTypeDef spiTxRx(const uint8_t *txData, uint8_t *rxData, uint16_t lengt
 #define RS485_EN_TX_GPIO_Port GPIOC
 #define LED_A_Pin GPIO_PIN_0
 #define LED_A_GPIO_Port GPIOB
-#define START_RFID_Pin GPIO_PIN_13
-#define START_RFID_GPIO_Port GPIOB
-#define CHECK_RFID_Pin GPIO_PIN_14
-#define CHECK_RFID_GPIO_Port GPIOB
 #define LED_FIELD_Pin GPIO_PIN_8
 #define LED_FIELD_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13

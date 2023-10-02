@@ -145,6 +145,8 @@ uint16_t rfalInit(rfalNfcDiscoverParam *pDiscParam){
 	err = rfalNfcInitialize();
 	if( err == ERR_NONE )
 	{
+		  pDiscParam->maxBR 		= RFAL_BR_106;
+
 		  pDiscParam->compMode      = RFAL_COMPLIANCE_MODE_NFC;
 		  pDiscParam->devLimit      = 1U;
 		  pDiscParam->nfcfBR        = RFAL_BR_212;
@@ -506,19 +508,32 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, CHECK_RFID_Pin|RS485_EN_TX_Pin|CHECK_RS485_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, LED_F_Pin|LED_B_Pin|LED_FIELD_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, RS485_EN_TX_Pin|CHECK_RS485_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LED_A_Pin|CHECK_RFID_Pin|SPI1_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LED_A_Pin|SPI1_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : CHECK_RFID_Pin RS485_EN_TX_Pin CHECK_RS485_Pin */
+  GPIO_InitStruct.Pin = CHECK_RFID_Pin|RS485_EN_TX_Pin|CHECK_RS485_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : START_RFID_Pin START_RS485_Pin */
+  GPIO_InitStruct.Pin = START_RFID_Pin|START_RS485_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : IRQ_3911_Pin */
   GPIO_InitStruct.Pin = IRQ_3911_Pin;
@@ -533,31 +548,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RS485_EN_TX_Pin CHECK_RS485_Pin */
-  GPIO_InitStruct.Pin = RS485_EN_TX_Pin|CHECK_RS485_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LED_A_Pin CHECK_RFID_Pin SPI1_CS_Pin */
-  GPIO_InitStruct.Pin = LED_A_Pin|CHECK_RFID_Pin|SPI1_CS_Pin;
+  /*Configure GPIO pins : LED_A_Pin SPI1_CS_Pin */
+  GPIO_InitStruct.Pin = LED_A_Pin|SPI1_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : START_RFID_Pin */
-  GPIO_InitStruct.Pin = START_RFID_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(START_RFID_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : START_RS485_Pin */
-  GPIO_InitStruct.Pin = START_RS485_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(START_RS485_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
