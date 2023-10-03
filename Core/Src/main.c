@@ -40,6 +40,8 @@
 #define RX_BUFFER_SIZE 	100
 #define START_RS485_CMD "RS485_TEST_123"
 #define RS485_ANSWER 	"RS485_TEST_SUCCESS"
+
+#define TESTCYCLE_TIME 1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,6 +68,9 @@ SPI_HandleTypeDef *pSpi = NULL;
 /* P2P communication data */
 static uint8_t NFCID3[] = {0x01, 0xFE, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
 static uint8_t GB[] = {0x46, 0x66, 0x6d, 0x01, 0x01, 0x11, 0x02, 0x02, 0x07, 0x80, 0x03, 0x02, 0x00, 0x03, 0x04, 0x01, 0x32, 0x07, 0x01, 0x03};
+
+static uint32_t rfidCycle_SysTick = 0;
+static uint32_t rs485Cycle_SysTick = 0;
 
 static uint8_t rxBuffer1[RX_BUFFER_SIZE];
 static uint8_t rxBuffer2[RX_BUFFER_SIZE];
@@ -167,8 +172,7 @@ uint16_t rfalInit(rfalNfcDiscoverParam *pDiscParam){
 
 uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, uint8_t discoveryStarted){
 	//uint8_t devUID[RFAL_NFCV_UID_LEN];
-
-	if(HAL_GPIO_ReadPin(START_RFID_GPIO_Port, START_RFID_Pin)){
+	if(HAL_GetTick() >= rfidCycle_SysTick){
 		rfalNfcWorker();                                    // Run RFAL worker periodically
 
 		if(!discoveryStarted){
@@ -177,6 +181,7 @@ uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, ui
 
 			discoveryStarted = 1;
 		}else{
+			HAL_GPIO_WritePin(CHECK_RFID_GPIO_Port, CHECK_RFID_Pin, GPIO_PIN_RESET);
 			if( rfalNfcIsDevActivated( rfalNfcGetState() ) )
 			{
 				rfalNfcGetActiveDevice( &pNfcDevice );
@@ -188,31 +193,31 @@ uint8_t checkNFC(rfalNfcDiscoverParam *pDiscParam, rfalNfcDevice *pNfcDevice, ui
 				}
 				rfalNfcDeactivate( false );
 				discoveryStarted = 0;
+				rfidCycle_SysTick = HAL_GetTick() + TESTCYCLE_TIME;
 			}
 		}
-	}else{
-		HAL_GPIO_WritePin(CHECK_RFID_GPIO_Port, CHECK_RFID_Pin, GPIO_PIN_RESET);
-		discoveryStarted = 0;
 	}
 
 	return discoveryStarted;
 }
 
 void checkRS485(){
-	if(HAL_GPIO_ReadPin(START_RS485_GPIO_Port, START_RS485_Pin)){
+	if(HAL_GetTick() >= rs485Cycle_SysTick){
 		HAL_UART_DMAStop(&huart6);
+
+		rxBuffer6[0] = '\0';
+		HAL_UART_Receive_DMA(&huart6, rxBuffer6, RX_BUFFER_SIZE);
+
+		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_SET);
+		HAL_UART_Transmit(&huart6, (uint8_t*)START_RS485_CMD, 14, 10);
+		HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_RESET);
+
+		HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_RESET);
+		rs485Cycle_SysTick = HAL_GetTick() + TESTCYCLE_TIME;
+	}else{
 		if(strcmp((char *)rxBuffer6, (char *)RS485_ANSWER) == 0){
 			HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_SET);
-		}else{
-			rxBuffer6[0] = '\0';
-			HAL_UART_Receive_DMA(&huart6, rxBuffer6, RX_BUFFER_SIZE);
-
-			HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_SET);
-			HAL_UART_Transmit(&huart6, (uint8_t*)START_RS485_CMD, 14, 10);
-			HAL_GPIO_WritePin(RS485_EN_TX_GPIO_Port, RS485_EN_TX_Pin, GPIO_PIN_RESET);
 		}
-	}else{
-		HAL_GPIO_WritePin(CHECK_RS485_GPIO_Port, CHECK_RS485_Pin, GPIO_PIN_RESET);
 	}
 }
 
